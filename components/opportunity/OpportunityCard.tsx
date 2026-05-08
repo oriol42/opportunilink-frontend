@@ -1,84 +1,115 @@
 import Link from "next/link";
 
-export interface Opportunity {
+export interface OpportunityData {
   id: string;
   title: string;
-  type: "bourse" | "stage" | "emploi" | "echange" | "concours";
-  country: string;
+  type: string;
+  description?: string | null;
   deadline: string | null;
+  country: string | null;
   reliability_score: number;
-  is_verified: boolean;
   relevance_score: number;
-  prep_score: number | null;
+  organization_name?: string | null;
 }
 
-const TYPE_STYLES: Record<string, { label: string; color: string }> = {
-  bourse:   { label: "Bourse",   color: "bg-emerald-100 text-emerald-700" },
-  stage:    { label: "Stage",    color: "bg-blue-100 text-blue-700" },
-  emploi:   { label: "Emploi",   color: "bg-purple-100 text-purple-700" },
-  echange:  { label: "Échange",  color: "bg-orange-100 text-orange-700" },
+interface OpportunityCardProps {
+  opportunity: OpportunityData;
+}
+
+const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+  bourse: { label: "Bourse", color: "bg-purple-100 text-purple-700" },
+  stage: { label: "Stage", color: "bg-blue-100 text-blue-700" },
+  emploi: { label: "Emploi", color: "bg-green-100 text-green-700" },
+  echange: { label: "Échange", color: "bg-orange-100 text-orange-700" },
   concours: { label: "Concours", color: "bg-red-100 text-red-700" },
 };
 
-function DeadlineBadge({ deadline }: { deadline: string | null }) {
+function getDaysLeft(deadline: string | null): number | null {
   if (!deadline) return null;
-  const daysLeft = Math.ceil(
-    (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
-  if (daysLeft < 0) return <span className="text-xs text-red-500 font-medium">Expirée</span>;
-  if (daysLeft <= 7) return <span className="text-xs text-red-500 font-medium">⚠️ {daysLeft}j restants</span>;
-  if (daysLeft <= 30) return <span className="text-xs text-orange-500 font-medium">{daysLeft}j restants</span>;
+  const diff = new Date(deadline).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function getScoreColor(score: number): string {
+  if (score >= 75) return "text-emerald-600";
+  if (score >= 50) return "text-yellow-600";
+  return "text-red-500";
+}
+
+function getScoreBarColor(score: number): string {
+  if (score >= 75) return "bg-emerald-500";
+  if (score >= 50) return "bg-yellow-400";
+  return "bg-red-400";
+}
+
+function DeadlineBadge({ deadline }: { deadline: string | null }) {
+  const days = getDaysLeft(deadline);
+  if (days === null) return null;
+  if (days < 0) return <span className="text-xs text-gray-400">Expirée</span>;
+
+  const urgency =
+    days <= 3
+      ? "bg-red-100 text-red-700"
+      : days <= 7
+      ? "bg-orange-100 text-orange-700"
+      : "bg-gray-100 text-gray-600";
+
   return (
-    <span className="text-xs text-gray-400">
-      {new Date(deadline).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${urgency}`}>
+      {days === 0 ? "Aujourd'hui !" : `J-${days}`}
     </span>
   );
 }
 
-function RelevanceBar({ score }: { score: number }) {
-  const color = score >= 70 ? "bg-emerald-500" : score >= 40 ? "bg-orange-400" : "bg-gray-300";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-        <div className={`${color} h-1.5 rounded-full transition-all`} style={{ width: `${score}%` }} />
-      </div>
-      <span className="text-xs text-gray-500 w-8 text-right">{score}%</span>
-    </div>
-  );
-}
+export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
+  const typeConfig = TYPE_CONFIG[opportunity.type] ?? {
+    label: opportunity.type,
+    color: "bg-gray-100 text-gray-600",
+  };
 
-export function OpportunityCard({ opp }: { opp: Opportunity }) {
-  const typeStyle = TYPE_STYLES[opp.type] ?? { label: opp.type, color: "bg-gray-100 text-gray-700" };
+  const score = Math.round(opportunity.relevance_score);
 
   return (
-    <Link href={`/opportunity/${opp.id}`}>
-      <div className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-emerald-200 transition-all cursor-pointer">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeStyle.color}`}>
-              {typeStyle.label}
-            </span>
-            {opp.is_verified && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-teal-50 text-teal-600">
-                ✓ Vérifié
-              </span>
-            )}
-          </div>
-          <span className="text-sm text-gray-400">🌍 {opp.country}</span>
+    <Link href={`/opportunity/${opportunity.id}`}>
+      <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md hover:border-emerald-300 transition-all duration-200 cursor-pointer">
+        <div className="flex items-center justify-between mb-2">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${typeConfig.color}`}>
+            {typeConfig.label}
+          </span>
+          <DeadlineBadge deadline={opportunity.deadline} />
         </div>
 
-        <h3 className="font-semibold text-gray-800 mb-3 leading-snug">{opp.title}</h3>
+        <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1 line-clamp-2">
+          {opportunity.title}
+        </h3>
 
-        <div className="mb-3">
+        <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+          {opportunity.organization_name && (
+            <span>{opportunity.organization_name}</span>
+          )}
+          {opportunity.organization_name && opportunity.country && <span>·</span>}
+          {opportunity.country && <span>🌍 {opportunity.country}</span>}
+        </div>
+
+        {opportunity.description && (
+          <p className="text-xs text-gray-500 line-clamp-2 mb-3">
+            {opportunity.description}
+          </p>
+        )}
+
+        <div className="mt-auto">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-400">Pertinence pour toi</span>
+            <span className="text-xs text-gray-400">Pertinence</span>
+            <span className={`text-xs font-bold ${getScoreColor(score)}`}>
+              {score}%
+            </span>
           </div>
-          <RelevanceBar score={Math.round(opp.relevance_score)} />
-        </div>
-
-        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-          <DeadlineBadge deadline={opp.deadline} />
-          <span className="text-xs text-gray-400">Fiabilité {opp.reliability_score}/100</span>
+          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${getScoreBarColor(score)}`}
+              style={{ width: `${score}%` }}
+            />
+          </div>
         </div>
       </div>
     </Link>

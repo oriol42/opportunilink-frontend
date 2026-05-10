@@ -1,147 +1,184 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@/store/useStore";
 import { api } from "@/lib/api";
-import Link from "next/link";
 
-interface Coaching {
-  action: string; action_type: string; action_url: string; action_cta: string;
-  urgent_deadlines: { title: string; days: number; id: string }[];
-  insights: {
-    profile_pct: number; docs_pct: number; applied: number;
-    submitted: number; accepted: number; saved: number; missing_docs: string[];
-  };
-}
+interface Message { role: "user" | "assistant"; content: string; ts: number }
 
-const DOC_LABELS: Record<string, string> = { cv: "CV", releve: "Relevé de notes", cni: "CNI / Passeport", attestation: "Attestation" };
-
-const ROADMAP_STEPS = [
-  { id: 1, title: "Profil complet",        desc: "Niveau, filière, langues, moyenne, compétences",         check: (c: Coaching) => c.insights.profile_pct >= 85, url: "/dashboard/profile" },
-  { id: 2, title: "Dossier complet",       desc: "CV, relevés, CNI, attestation uploadés",                  check: (c: Coaching) => c.insights.docs_pct >= 100,   url: "/dashboard/documents" },
-  { id: 3, title: "Première candidature", desc: "Postule à au moins une opportunité",                       check: (c: Coaching) => c.insights.applied >= 1,      url: "/dashboard" },
-  { id: 4, title: "Candidature soumise",  desc: "Au moins une candidature en statut Soumise",               check: (c: Coaching) => c.insights.submitted >= 1,    url: "/dashboard/applications" },
-  { id: 5, title: "5 opportunités suivies", desc: "Sauvegarde 5 opportunités dans tes favoris",             check: (c: Coaching) => c.insights.saved >= 5,        url: "/dashboard" },
-  { id: 6, title: "Lettre IA générée",    desc: "Utilise le générateur de lettre sur une opportunité",      check: () => false,                                    url: "/dashboard" },
+const SUGGESTIONS = [
+  "Quelles bourses correspondent à mon profil ?",
+  "Comment rédiger une bonne lettre de motivation ?",
+  "Que faire pour améliorer mon dossier ?",
+  "Comment candidater à un stage au Cameroun ?",
+  "Quelles compétences dois-je développer ?",
 ];
 
-export default function CoachPage() {
+function TypingDots() {
+  return (
+    <div style={{ display: "flex", gap: 4, padding: "10px 14px", alignItems: "center" }}>
+      {[0,1,2].map(i => (
+        <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981",
+          animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+      ))}
+      <style>{`@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }`}</style>
+    </div>
+  );
+}
+
+export default function CoachChatPage() {
   const router = useRouter();
   const { user, isAuthLoading } = useStore();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { if (!isAuthLoading && !user) router.push("/login"); }, [isAuthLoading, user]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
-  const { data } = useQuery<Coaching>({
-    queryKey: ["coaching"],
-    queryFn: async () => (await api.get("/users/me/coaching")).data,
-    enabled: !!user,
-  });
+  // Message d'accueil
+  useEffect(() => {
+    if (user && messages.length === 0) {
+      setMessages([{
+        role: "assistant",
+        content: `Bonjour ${user.full_name?.split(" ")[0]} ! 👋 Je suis ton coach IA powered by Llama 3.3.\n\nJe connais ton profil et peux t'aider à :\n• Trouver les opportunités qui te correspondent\n• Préparer tes candidatures\n• Rédiger ou améliorer ta lettre de motivation\n• Planifier ton développement de carrière\n\nQue veux-tu travailler aujourd'hui ?`,
+        ts: Date.now(),
+      }]);
+    }
+  }, [user]);
+
+  async function sendMessage(text?: string) {
+    const msg = text ?? input.trim();
+    if (!msg || loading) return;
+    setInput("");
+
+    const userMsg: Message = { role: "user", content: msg, ts: Date.now() };
+    const history = [...messages, userMsg];
+    setMessages(history);
+    setLoading(true);
+
+    try {
+      const res = await api.post("/ai/chat", { message: msg, history: messages.slice(-10) });
+      setMessages(prev => [...prev, { role: "assistant", content: res.data.reply, ts: Date.now() }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Désolé, une erreur est survenue. Réessaie dans quelques secondes.",
+        ts: Date.now(),
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleKey(e: React.KeyboardEvent) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
 
   if (isAuthLoading || !user) return null;
 
-  const completedSteps = data ? ROADMAP_STEPS.filter(s => s.check(data)).length : 0;
-  const progressPct    = Math.round((completedSteps / ROADMAP_STEPS.length) * 100);
-
   return (
-    <div className="px-4 lg:px-5 py-5 max-w-3xl">
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff" }}>
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-black text-gray-900">Mon parcours</h2>
-        <p className="text-sm text-gray-400 mt-1">
-          Ton coach personnalisé — étape par étape vers ta première candidature réussie.
-        </p>
+      {/* Header */}
+      <div style={{ padding: "14px 20px", borderBottom: "0.5px solid #f3f4f6", flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#f0fdf4", border: "1.5px solid #bbf7d0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+          🤖
+        </div>
+        <div>
+          <p style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>Coach IA</p>
+          <p style={{ fontSize: 11, color: "#10b981" }}>● En ligne · Llama 3.3 70B</p>
+        </div>
       </div>
 
-      {/* Progression globale */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="font-bold text-gray-800">Progression globale</span>
-          <span className="text-2xl font-black text-emerald-600">{progressPct}%</span>
-        </div>
-        <div className="bg-gray-100 rounded-full h-3 overflow-hidden mb-1">
-          <div className="h-full rounded-full bg-emerald-500 transition-all duration-700"
-            style={{ width: `${progressPct}%` }} />
-        </div>
-        <p className="text-xs text-gray-400">{completedSteps} / {ROADMAP_STEPS.length} étapes complétées</p>
-      </div>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
 
-      {/* Roadmap */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-5">
-        <div className="p-5 border-b border-gray-50">
-          <h3 className="font-bold text-gray-800">Feuille de route</h3>
-        </div>
-        <div className="divide-y divide-gray-50">
-          {ROADMAP_STEPS.map((step, i) => {
-            const done    = data ? step.check(data) : false;
-            const current = !done && (i === 0 || (data ? ROADMAP_STEPS[i-1].check(data) : false));
-            return (
-              <div key={step.id}
-                className={`flex items-start gap-4 p-4 transition-colors ${current ? "bg-emerald-50" : ""}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0 mt-0.5 ${
-                  done    ? "bg-emerald-500 text-white" :
-                  current ? "bg-emerald-100 text-emerald-700 ring-2 ring-emerald-500" :
-                            "bg-gray-100 text-gray-400"
-                }`}>
-                  {done ? "✓" : step.id}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-bold text-sm ${done ? "text-gray-400 line-through" : current ? "text-gray-900" : "text-gray-500"}`}>
-                    {step.title}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{step.desc}</p>
-                  {current && (
-                    <Link href={step.url}
-                      className="inline-block mt-2 text-xs font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-lg transition">
-                      Faire maintenant →
-                    </Link>
-                  )}
-                </div>
-                {done && <span className="text-emerald-500 text-lg shrink-0">✓</span>}
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", gap: 8, alignItems: "flex-end" }}>
+
+            {m.role === "assistant" && (
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#f0fdf4", border: "1px solid #bbf7d0",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginBottom: 2 }}>
+                🤖
               </div>
-            );
-          })}
-        </div>
-      </div>
+            )}
 
-      {/* Documents manquants */}
-      {data && data.insights.missing_docs.length > 0 && (
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-5">
-          <h3 className="font-bold text-blue-800 mb-3 text-sm">
-            📁 Documents manquants ({data.insights.missing_docs.length})
-          </h3>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {data.insights.missing_docs.map(doc => (
-              <div key={doc} className="flex items-center gap-2 bg-white rounded-xl px-3 py-2.5 border border-blue-100">
-                <span className="text-red-400 font-bold text-xs">✕</span>
-                <span className="text-sm font-medium text-gray-700">{DOC_LABELS[doc] ?? doc}</span>
+            <div style={{
+              maxWidth: "75%", padding: "10px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+              background: m.role === "user" ? "#059669" : "#f9fafb",
+              border: m.role === "assistant" ? "0.5px solid #f3f4f6" : "none",
+              color: m.role === "user" ? "#fff" : "#1f2937",
+              fontSize: 13.5, lineHeight: 1.55, whiteSpace: "pre-wrap",
+            }}>
+              {m.content}
+            </div>
+
+            {m.role === "user" && (
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#059669",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11,
+                fontWeight: 700, color: "#fff", flexShrink: 0, marginBottom: 2 }}>
+                {user.full_name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
               </div>
-            ))}
+            )}
           </div>
-          <Link href="/dashboard/documents"
-            className="inline-block text-xs font-bold text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-xl transition">
-            Uploader mes documents →
-          </Link>
+        ))}
+
+        {loading && (
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#f0fdf4", border: "1px solid #bbf7d0",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
+              🤖
+            </div>
+            <div style={{ background: "#f9fafb", border: "0.5px solid #f3f4f6", borderRadius: "18px 18px 18px 4px" }}>
+              <TypingDots />
+            </div>
+          </div>
+        )}
+
+        <div ref={endRef} />
+      </div>
+
+      {/* Suggestions — affichées seulement au début */}
+      {messages.length <= 1 && (
+        <div style={{ padding: "0 20px 12px", display: "flex", gap: 6, overflowX: "auto", flexShrink: 0 }}>
+          {SUGGESTIONS.map(s => (
+            <button key={s} onClick={() => sendMessage(s)}
+              style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#059669",
+                background: "#f0fdf4", border: "0.5px solid #bbf7d0", borderRadius: 20,
+                padding: "6px 12px", cursor: "pointer", whiteSpace: "nowrap" }}>
+              {s}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Conseils selon le profil */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5">
-        <h3 className="font-bold text-gray-800 mb-4 text-sm">💡 Conseils pour maximiser tes chances</h3>
-        <div className="space-y-3">
-          {[
-            { icon: "🎯", tip: "Postule à plusieurs opportunités en même temps. Les taux d'acceptation sont en général faibles — diversifie.", color: "bg-purple-50 border-purple-100" },
-            { icon: "✍️", tip: "Personnalise chaque lettre de motivation. Utilise le générateur IA mais adapte toujours l'introduction.", color: "bg-violet-50 border-violet-100" },
-            { icon: "📅", tip: "Note les deadlines J-30 dans ton agenda. Une candidature préparée en 2 semaines est toujours meilleure qu'une bâclée en 2 jours.", color: "bg-amber-50 border-amber-100" },
-            { icon: "📊", tip: "Un relevé de notes avec une note ≥ 12/20 suffit pour 80% des opportunités sur OpportuLink.", color: "bg-blue-50 border-blue-100" },
-            { icon: "🤝", tip: "Pour les stages locaux (MTN, Orange), une recommandation d'un professeur double tes chances.", color: "bg-emerald-50 border-emerald-100" },
-          ].map((c, i) => (
-            <div key={i} className={`flex items-start gap-3 rounded-xl px-4 py-3 border ${c.color}`}>
-              <span className="text-xl shrink-0">{c.icon}</span>
-              <p className="text-sm text-gray-700 leading-relaxed">{c.tip}</p>
-            </div>
-          ))}
-        </div>
+      {/* Input */}
+      <div style={{ padding: "12px 16px", borderTop: "0.5px solid #f3f4f6", flexShrink: 0, display: "flex", gap: 10, alignItems: "flex-end" }}>
+        <textarea ref={inputRef} value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKey}
+          placeholder="Pose ta question au coach... (Entrée pour envoyer)"
+          rows={1}
+          style={{ flex: 1, border: "0.5px solid #e5e7eb", borderRadius: 12, padding: "10px 14px",
+            fontSize: 13, outline: "none", resize: "none", fontFamily: "inherit",
+            maxHeight: 120, overflowY: "auto", lineHeight: 1.5 }}
+          onInput={e => {
+            const t = e.target as HTMLTextAreaElement;
+            t.style.height = "auto";
+            t.style.height = Math.min(t.scrollHeight, 120) + "px";
+          }}
+        />
+        <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
+          style={{ width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
+            background: input.trim() && !loading ? "#059669" : "#e5e7eb",
+            color: input.trim() && !loading ? "#fff" : "#9ca3af",
+            fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all .15s", flexShrink: 0 }}>
+          ↑
+        </button>
       </div>
     </div>
   );

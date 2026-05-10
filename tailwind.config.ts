@@ -9,7 +9,6 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        syne: ["var(--font-syne)", "system-ui", "sans-serif"],
       },
       keyframes: {
         "fade-up": {

@@ -32,7 +32,7 @@ function Sidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-52 shrink-0 bg-white border-r border-gray-100 h-screen sticky top-0">
       <div className="px-5 py-4 border-b border-gray-100 shrink-0">
-        <span className="font-syne font-black text-emerald-600 text-lg tracking-tight">
+        <span className="font-black text-emerald-600 text-lg tracking-tight">
           OpportuLink
         </span>
       </div>
@@ -146,7 +146,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Top bar mobile */}
         <header className="lg:hidden bg-white border-b border-gray-100 sticky top-0 z-20 shrink-0">
           <div className="px-4 h-14 flex items-center justify-between">
-            <span className="font-syne font-black text-emerald-600 text-lg">OpportuLink</span>
+            <span className="font-black text-emerald-600 text-lg">OpportuLink</span>
             <button onClick={logout} className="text-xs text-gray-400 hover:text-red-500 font-medium transition">
               Déconnexion
             </button>

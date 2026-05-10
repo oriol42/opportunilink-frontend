@@ -84,7 +84,7 @@ export default function DocumentsPage() {
   return (
     <div className="px-4 lg:px-6 py-5 max-w-5xl">
       <div className="mb-5">
-        <h2 className="text-2xl font-syne font-black text-gray-900">Mon coffre-fort</h2>
+        <h2 className="text-2xl font-black text-gray-900">Mon coffre-fort</h2>
         <p className="text-sm text-gray-400 mt-1">Upload une fois, réutilise pour toutes tes candidatures.</p>
       </div>
 

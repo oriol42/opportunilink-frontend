@@ -85,7 +85,7 @@ export default function ProfilePage() {
 
       {/* Header */}
       <div className="mb-5">
-        <h2 className="text-2xl font-syne font-black text-gray-900">Mon profil</h2>
+        <h2 className="text-2xl font-black text-gray-900">Mon profil</h2>
         <p className="text-sm text-gray-400 mt-1">
           Un profil complet améliore ton score de recommandation de 40%.
         </p>

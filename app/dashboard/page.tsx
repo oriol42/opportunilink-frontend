@@ -142,7 +142,7 @@ export default function DashboardPage() {
 
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-2xl font-syne font-black text-gray-900 tracking-tight">
+        <h2 className="text-2xl font-black text-gray-900 tracking-tight">
           {greeting},{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
             {firstName}

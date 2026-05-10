@@ -40,7 +40,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/">
-            <span className="font-syne font-black text-emerald-400 text-3xl tracking-tight cursor-pointer">
+            <span className="font-black text-emerald-400 text-3xl tracking-tight cursor-pointer">
               OpportuLink
             </span>
           </Link>

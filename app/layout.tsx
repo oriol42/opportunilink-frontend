@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Syne } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { SessionInitializer } from "@/components/SessionInitializer";
@@ -8,13 +8,7 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
-});
-
-const syne = Syne({
-  subsets: ["latin"],
-  variable: "--font-syne",
-  weight: ["700", "800"],
-  display: "swap",
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -32,17 +26,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-
   return (
-    <html lang="fr" className={`${inter.variable} ${syne.variable}`}>
+    <html lang="fr" className={inter.variable}>
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
         {plausibleDomain && (
-          <script
-            defer
-            data-domain={plausibleDomain}
-            src="https://plausible.io/js/script.js"
-          />
+          <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
         )}
       </head>
       <body className={inter.className}>

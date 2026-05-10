@@ -177,7 +177,7 @@ export default function DashboardPage() {
         )}
 
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
@@ -202,7 +202,7 @@ export default function DashboardPage() {
 
         {allOpps.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {allOpps.map((opp, i) => (
                 <div key={opp.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i % 9, 8) * 35}ms` }}>
                   <OpportunityCard opportunity={opp} />

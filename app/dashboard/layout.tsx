@@ -12,6 +12,7 @@ const NAV = [
   { href: "/dashboard/saved",        label: "Favoris",      icon: "🔖", countKey: "saved" },
   { href: "/dashboard/documents",    label: "Documents",    icon: "📁", countKey: "docs" },
   { href: "/dashboard/profile",      label: "Profil",       icon: "👤", countKey: null },
+  { href: "/dashboard/coach",        label: "Parcours",     icon: "🎯", countKey: null },
 ];
 
 function useSidebarCounts() {

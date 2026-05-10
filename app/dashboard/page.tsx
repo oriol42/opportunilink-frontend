@@ -6,6 +6,7 @@ import { useStore } from "@/store/useStore";
 import { api } from "@/lib/api";
 import OpportunityCard, { OpportunityData } from "@/components/opportunity/OpportunityCard";
 import Link from "next/link";
+import CoachingCard from "@/components/dashboard/CoachingCard";
 
 const LIMIT = 20;
 
@@ -163,18 +164,9 @@ export default function DashboardPage() {
       {/* Feed */}
       <div className="flex-1 overflow-y-auto px-4 lg:px-5 py-4">
 
-        {/* Nudge profil */}
-        {user && (!user.level || !user.field || !user.gpa) && (
-          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4 text-xs">
-            <span className="text-amber-500 text-sm shrink-0">⚡</span>
-            <p className="text-amber-800 font-medium flex-1">
-              Complète ton profil pour un feed 100% personnalisé
-            </p>
-            <Link href="/dashboard/profile" className="shrink-0 font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition text-[11px]">
-              Compléter →
-            </Link>
-          </div>
-        )}
+        <CoachingCard />
+
+
 
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

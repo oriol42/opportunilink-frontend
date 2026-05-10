@@ -10,9 +10,6 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  .font-display {
-    font-family: var(--font-syne), system-ui, sans-serif;
-  }
   .text-balance {
     text-wrap: balance;
   }
@@ -20,13 +17,11 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  html { -webkit-tap-highlight-color: transparent; }
-  body { @apply text-gray-900 antialiased; }
-}
-
-@layer base {
-  /* Empêche le débordement horizontal sur tout l'app */
-  html, body { overflow-x: hidden; max-width: 100vw; }
-  /* Les éléments de grille ne débordent jamais de leur colonne */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  body { @apply text-gray-900 antialiased; overflow-x: hidden; }
   .grid > * { min-width: 0; }
 }

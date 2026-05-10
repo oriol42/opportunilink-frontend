@@ -31,7 +31,7 @@ export default function HomePage() {
       {/* Navbar — full width */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="font-display font-black text-emerald-600 text-xl">OpportuLink</span>
+          <span className="font-syne font-black text-emerald-600 text-xl">OpportuLink</span>
           <div className="hidden md:flex items-center gap-6 text-sm text-gray-500 font-medium">
             <a href="#features" className="hover:text-emerald-600 transition">Fonctionnalités</a>
             <a href="#how" className="hover:text-emerald-600 transition">Comment ça marche</a>
@@ -56,7 +56,7 @@ export default function HomePage() {
             <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
             Plateforme gratuite · Yaoundé & Douala · 10 sources crawlées
           </div>
-          <h1 className="font-display font-black text-white text-5xl sm:text-7xl leading-tight mb-6">
+          <h1 className="font-syne font-black text-white text-5xl sm:text-7xl leading-tight mb-6">
             Ne rate plus jamais<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
               une opportunité
@@ -81,7 +81,7 @@ export default function HomePage() {
           <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto">
             {STATS.map((s) => (
               <div key={s.label} className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
-                <p className="text-2xl font-display font-black text-emerald-400 mb-0.5">{s.value}</p>
+                <p className="text-2xl font-syne font-black text-emerald-400 mb-0.5">{s.value}</p>
                 <p className="text-xs text-gray-300 font-semibold leading-tight">{s.label}</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">{s.sub}</p>
               </div>
@@ -110,7 +110,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3">Ce qu'on fait pour toi</p>
-            <h2 className="font-display font-black text-gray-900 text-4xl sm:text-5xl">Tout ce dont tu as besoin</h2>
+            <h2 className="font-syne font-black text-gray-900 text-4xl sm:text-5xl">Tout ce dont tu as besoin</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f) => (
@@ -130,12 +130,12 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3">Démarrer en 4 étapes</p>
-            <h2 className="font-display font-black text-gray-900 text-4xl">Simple comme bonjour</h2>
+            <h2 className="font-syne font-black text-gray-900 text-4xl">Simple comme bonjour</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {STEPS.map((step, i) => (
               <div key={step.n} className="flex gap-4 items-start bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white font-display font-black text-sm flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white font-syne font-black text-sm flex items-center justify-center shrink-0">
                   {step.n}
                 </div>
                 <div>
@@ -152,7 +152,7 @@ export default function HomePage() {
       <section className="py-24 px-6 bg-gray-950">
         <div className="max-w-2xl mx-auto text-center">
           <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center text-3xl mx-auto mb-6">🚀</div>
-          <h2 className="font-display font-black text-white text-4xl sm:text-5xl mb-4">
+          <h2 className="font-syne font-black text-white text-4xl sm:text-5xl mb-4">
             Ton avenir commence<br /><span className="text-emerald-400">maintenant</span>
           </h2>
           <p className="text-gray-400 mb-10 text-lg">Gratuit. Toujours.</p>
@@ -166,7 +166,7 @@ export default function HomePage() {
 
       <footer className="bg-gray-950 border-t border-gray-900 py-8 px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-display font-black text-emerald-600 text-lg">OpportuLink</span>
+          <span className="font-syne font-black text-emerald-600 text-lg">OpportuLink</span>
           <p className="text-gray-600 text-sm">© 2025 OpportuLink · Fait avec ❤️ au Cameroun</p>
           <div className="flex gap-4 text-sm text-gray-600">
             <Link href="/login" className="hover:text-gray-400 transition">Connexion</Link>

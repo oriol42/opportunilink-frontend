@@ -6,10 +6,10 @@ export default function NotFound() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                       w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="relative text-center">
-        <p className="font-display font-black text-emerald-500/30 text-[120px] leading-none mb-0">
+        <p className="font-syne font-black text-emerald-500/30 text-[120px] leading-none mb-0">
           404
         </p>
-        <h1 className="font-display font-black text-white text-2xl -mt-4 mb-3">
+        <h1 className="font-syne font-black text-white text-2xl -mt-4 mb-3">
           Page introuvable
         </h1>
         <p className="text-gray-500 text-sm mb-8 max-w-xs mx-auto">

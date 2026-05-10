@@ -201,7 +201,7 @@ export default function OpportunityDetailPage() {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => router.push("/dashboard")} className="text-sm text-gray-500 hover:text-gray-800 font-medium">← Retour</button>
-          <span className="font-display font-black text-emerald-600">OpportuLink</span>
+          <span className="font-syne font-black text-emerald-600">OpportuLink</span>
           <div className="flex items-center gap-2"><ShareButton title={opp?.title ?? ""} oppId={id} /><SaveButton oppId={id} /></div>
         </div>
         <div className={`h-[2px] bg-gradient-to-r ${typeCfg.accent}`} />

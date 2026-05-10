@@ -164,6 +164,20 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Bandeau organisation */}
+      <section className="py-12 px-6 bg-gray-900 border-t border-gray-800">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <p className="font-black text-white text-lg mb-1">Vous êtes une organisation ?</p>
+            <p className="text-gray-400 text-sm">Publiez vos opportunités directement dans le feed — gratuitement.</p>
+          </div>
+          <a href="/org"
+            className="shrink-0 border border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold px-6 py-3 rounded-xl transition text-sm">
+            Espace Organisation →
+          </a>
+        </div>
+      </section>
+
       <footer className="bg-gray-950 border-t border-gray-900 py-8 px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="font-black text-emerald-600 text-lg">OpportuLink</span>
@@ -171,6 +185,7 @@ export default function HomePage() {
           <div className="flex gap-4 text-sm text-gray-600">
             <Link href="/login" className="hover:text-gray-400 transition">Connexion</Link>
             <Link href="/register" className="hover:text-gray-400 transition">S'inscrire</Link>
+            <Link href="/org" className="hover:text-gray-400 transition">Espace Organisation</Link>
           </div>
         </div>
       </footer>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+import StatsWidget from "@/components/dashboard/StatsWidget";
 
 const LEVELS    = ["Licence", "Master", "Doctorat", "BTS", "DUT", "Ingénieur"];
 const FIELDS    = ["Informatique", "Droit", "Médecine", "Économie", "Gestion", "Lettres", "Sciences", "Ingénierie", "Pharmacie", "Architecture"];
@@ -90,6 +91,8 @@ export default function ProfilePage() {
           Un profil complet améliore ton score de recommandation de 40%.
         </p>
       </div>
+
+      <StatsWidget />
 
       {/* Barre de complétude — pleine largeur */}
       <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-5 mb-5">

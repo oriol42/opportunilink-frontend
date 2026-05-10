@@ -138,7 +138,7 @@ export default function DashboardPage() {
   const firstName = user.full_name.split(" ")[0];
 
   return (
-    <div className="px-4 lg:px-6 py-5 max-w-none">
+    <div className="px-4 lg:px-6 py-5 max-w-5xl">
 
       {/* Header */}
       <div className="mb-4">

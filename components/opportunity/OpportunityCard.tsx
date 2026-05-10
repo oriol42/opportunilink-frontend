@@ -54,7 +54,7 @@ export default function OpportunityCard({ opportunity }: { opportunity: Opportun
   const score = Math.round(opportunity.relevance_score ?? 0);
 
   return (
-    <article className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
+    <article className="group bg-white rounded-2xl border border-gray-100 overflow-hidden min-w-0 hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
       <div className={`h-[3px] bg-gradient-to-r ${cfg.accent}`} />
       <div className="p-4 pb-3.5">
 

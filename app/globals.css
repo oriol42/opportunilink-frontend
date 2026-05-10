@@ -23,3 +23,10 @@
   html { -webkit-tap-highlight-color: transparent; }
   body { @apply text-gray-900 antialiased; }
 }
+
+@layer base {
+  /* Empêche le débordement horizontal sur tout l'app */
+  html, body { overflow-x: hidden; max-width: 100vw; }
+  /* Les éléments de grille ne débordent jamais de leur colonne */
+  .grid > * { min-width: 0; }
+}

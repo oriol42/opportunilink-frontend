@@ -71,7 +71,7 @@ export default function ApplicationsPage() {
   );
 
   return (
-    <div className="px-4 lg:px-6 py-5">
+    <div className="px-4 lg:px-6 py-5 max-w-5xl">
       <div className="mb-5">
         <h2 className="text-2xl font-display font-black text-gray-900">Mes candidatures</h2>
         <p className="text-sm text-gray-400 mt-1">

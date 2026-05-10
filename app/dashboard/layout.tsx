@@ -125,7 +125,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
 
       {/* Sidebar — desktop */}
       <Sidebar />
@@ -144,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Content */}
-        <main className="flex-1 pb-24 lg:pb-6">
+        <main className="flex-1 pb-24 lg:pb-6 min-w-0">
           {children}
         </main>
 

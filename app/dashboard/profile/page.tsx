@@ -81,7 +81,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="px-4 lg:px-6 py-5">
+    <div className="px-4 lg:px-6 py-5 max-w-4xl">
 
       {/* Header */}
       <div className="mb-5">

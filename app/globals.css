@@ -2,7 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  color: #171717;
-  background: #ffffff;
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .font-display {
+    font-family: var(--font-syne), system-ui, sans-serif;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { -webkit-tap-highlight-color: transparent; }
+  body { @apply text-gray-900 antialiased; }
 }

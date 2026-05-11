@@ -17,120 +17,146 @@ interface Opp {
   relevance_score: number; is_verified?: boolean;
 }
 
-const TYPE_CFG: Record<string, { label: string; color: string; dot: string; bar: string }> = {
-  bourse:   { label: "Bourse",   color: "#7c3aed", dot: "#7c3aed", bar: "#7c3aed" },
-  stage:    { label: "Stage",    color: "#2563eb", dot: "#2563eb", bar: "#2563eb" },
-  emploi:   { label: "Emploi",   color: "#059669", dot: "#059669", bar: "#059669" },
-  echange:  { label: "Échange",  color: "#d97706", dot: "#d97706", bar: "#d97706" },
-  concours: { label: "Concours", color: "#dc2626", dot: "#dc2626", bar: "#dc2626" },
+interface Stats {
+  applications: { total: number; submitted: number; accepted: number };
+  saved_count: number; documents_count: number; profile_pct: number;
+}
+
+const TYPE_CFG: Record<string, { label: string; color: string; bg: string; accent: string }> = {
+  bourse:   { label: "Bourse",   color: "#7c3aed", bg: "#f3e8ff", accent: "#4c1d95" },
+  stage:    { label: "Stage",    color: "#2563eb", bg: "#dbeafe", accent: "#1e3a8a" },
+  emploi:   { label: "Emploi",   color: "#059669", bg: "#d1fae5", accent: "#064e3b" },
+  echange:  { label: "Échange",  color: "#d97706", bg: "#fef3c7", accent: "#78350f" },
+  concours: { label: "Concours", color: "#dc2626", bg: "#fee2e2", accent: "#7f1d1d" },
 };
 
 const TYPES = [
-  { value:"all", label:"Tous", emoji:"✨" },
-  { value:"bourse", label:"Bourses", emoji:"🎓" },
-  { value:"stage", label:"Stages", emoji:"💼" },
-  { value:"emploi", label:"Emplois", emoji:"🏢" },
-  { value:"echange", label:"Échanges", emoji:"✈️" },
-  { value:"concours", label:"Concours", emoji:"🏆" },
+  { value: "all", label: "Tous", emoji: "✨" },
+  { value: "bourse", label: "Bourses", emoji: "🎓" },
+  { value: "stage", label: "Stages", emoji: "💼" },
+  { value: "emploi", label: "Emplois", emoji: "🏢" },
+  { value: "echange", label: "Échanges", emoji: "✈️" },
+  { value: "concours", label: "Concours", emoji: "🏆" },
 ];
 
-function days(deadline: string | null): number | null {
+function daysLeft(deadline: string | null) {
   if (!deadline) return null;
   return Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000);
 }
 
-function DeadlineChip({ deadline }: { deadline: string | null }) {
-  const d = days(deadline);
-  if (d === null) return null;
-  if (d < 0)  return <span style={{ fontSize: 10, color: "#9ca3af" }}>Expirée</span>;
-  if (d === 0) return <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#dc2626", padding: "1px 7px", borderRadius: 20 }}>Auj.!</span>;
-  if (d <= 3)  return <span style={{ fontSize: 10, fontWeight: 700, color: "#991b1b", background: "#fee2e2", padding: "1px 7px", borderRadius: 20 }}>🔥 J-{d}</span>;
-  if (d <= 7)  return <span style={{ fontSize: 10, fontWeight: 700, color: "#92400e", background: "#fef3c7", padding: "1px 7px", borderRadius: 20 }}>⚡ J-{d}</span>;
-  return <span style={{ fontSize: 10, color: "#9ca3af", background: "#f3f4f6", padding: "1px 7px", borderRadius: 20 }}>J-{d}</span>;
-}
-
-function OppRow({ opp, style }: { opp: Opp; style?: React.CSSProperties }) {
-  const cfg   = TYPE_CFG[opp.type] ?? { label: opp.type, color: "#6b7280", dot: "#6b7280", bar: "#6b7280" };
+// ── Hero Card — grande carte en avant ─────────────────────
+function HeroCard({ opp }: { opp: Opp }) {
+  const cfg   = TYPE_CFG[opp.type] ?? { label: opp.type, color: "#6b7280", bg: "#f3f4f6", accent: "#374151" };
+  const d     = daysLeft(opp.deadline);
   const score = Math.round(opp.relevance_score ?? 0);
-  const scoreColor = score >= 75 ? "#059669" : score >= 50 ? "#d97706" : "#dc2626";
+  const scoreColor = score >= 75 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div style={{
-      display: "flex", alignItems: "flex-start", gap: 12,
-      padding: "11px 16px", borderBottom: "0.5px solid #f3f4f6",
-      background: "#fff", cursor: "pointer", transition: "background .1s",
-      ...style,
-    }}
-    className="hover:bg-gray-50 group">
+    <Link href={`/opportunity/${opp.id}`} style={{ textDecoration: "none", display: "block" }}>
+      <div style={{
+        background: "#fff", borderRadius: 20, border: "0.5px solid #f3f4f6",
+        overflow: "hidden", cursor: "pointer", transition: "box-shadow .15s, transform .15s",
+        height: "100%",
+      }} className="hover:shadow-lg hover:-translate-y-0.5">
+        {/* Accent bar */}
+        <div style={{ height: 4, background: `linear-gradient(90deg, ${cfg.color}, ${cfg.accent})` }} />
 
-      {/* Indicateur coloré type */}
-      <div style={{ width: 3, borderRadius: 2, background: cfg.dot, alignSelf: "stretch", minHeight: 40, shrink: 0, flexShrink: 0, marginTop: 2 }} />
-
-      {/* Contenu principal */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
-          <Link href={`/opportunity/${opp.id}`} style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontWeight: 700, fontSize: 13, color: "#111827", lineHeight: 1.35, marginBottom: 2 }}
-              className="group-hover:text-emerald-700 transition-colors">
-              {opp.title}
-            </p>
-          </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <DeadlineChip deadline={opp.deadline} />
-            <SaveButton oppId={opp.id} compact />
-          </div>
-        </div>
-
-        {/* Description — 1 ligne */}
-        {opp.description && (
-          <p style={{ fontSize: 11.5, color: "#6b7280", lineHeight: 1.4, marginBottom: 6,
-            overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>
-            {opp.description}
-          </p>
-        )}
-
-        {/* Meta row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color,
-            background: cfg.color + "15", padding: "2px 8px", borderRadius: 20 }}>
-            {cfg.label}
-          </span>
-          {opp.country && <span style={{ fontSize: 10, color: "#9ca3af" }}>🌍 {opp.country}</span>}
-          {opp.is_verified && <span style={{ fontSize: 10, color: "#059669", fontWeight: 600 }}>✓ Vérifié</span>}
-
-          {/* Score inline */}
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 60, height: 3, background: "#f3f4f6", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${score}%`, background: scoreColor, borderRadius: 2 }} />
+        <div style={{ padding: "20px 20px 16px" }}>
+          {/* Top row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: cfg.color, background: cfg.bg, padding: "3px 10px", borderRadius: 20 }}>
+              {cfg.label}
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {opp.is_verified && <span style={{ fontSize: 10, color: "#059669", fontWeight: 700 }}>✓ Vérifié</span>}
+              {d !== null && d >= 0 && (
+                <span style={{ fontSize: 11, fontWeight: 800,
+                  color: d <= 7 ? "#dc2626" : "#6b7280",
+                  background: d <= 7 ? "#fee2e2" : "#f3f4f6",
+                  padding: "3px 10px", borderRadius: 20 }}>
+                  {d <= 7 ? `🔥 J-${d}` : `J-${d}`}
+                </span>
+              )}
+              <SaveButton oppId={opp.id} compact />
             </div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: scoreColor, width: 28, textAlign: "right" }}>{score}%</span>
+          </div>
+
+          {/* Titre */}
+          <h3 style={{ fontWeight: 800, fontSize: 16, color: "#111827", lineHeight: 1.35, marginBottom: 8 }}>
+            {opp.title}
+          </h3>
+
+          {/* Description */}
+          {opp.description && (
+            <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.55, marginBottom: 14,
+              overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+              {opp.description}
+            </p>
+          )}
+
+          {/* Footer */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 12, color: "#9ca3af" }}>🌍 {opp.country ?? "International"}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 80, height: 4, background: "#f3f4f6", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${score}%`, background: scoreColor, borderRadius: 2 }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor }}>{score}%</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
-function SkeletonRow() {
+// ── Compact Card — carousel horizontal ────────────────────
+function CompactCard({ opp }: { opp: Opp }) {
+  const cfg   = TYPE_CFG[opp.type] ?? { label: opp.type, color: "#6b7280", bg: "#f3f4f6", accent: "#374151" };
+  const d     = daysLeft(opp.deadline);
+  const score = Math.round(opp.relevance_score ?? 0);
+
   return (
-    <div style={{ display: "flex", gap: 12, padding: "12px 16px", borderBottom: "0.5px solid #f3f4f6", background: "#fff" }}>
-      <div style={{ width: 3, background: "#f3f4f6", borderRadius: 2, alignSelf: "stretch" }} />
-      <div style={{ flex: 1 }}>
-        <div style={{ height: 13, background: "#f3f4f6", borderRadius: 4, width: "65%", marginBottom: 8 }} />
-        <div style={{ height: 11, background: "#f9fafb", borderRadius: 4, width: "40%", marginBottom: 8 }} />
-        <div style={{ height: 10, background: "#f9fafb", borderRadius: 4, width: "30%" }} />
+    <Link href={`/opportunity/${opp.id}`} style={{ textDecoration: "none", display: "block", flexShrink: 0, width: 260 }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, border: "0.5px solid #f3f4f6",
+        overflow: "hidden", height: "100%", cursor: "pointer",
+      }} className="hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div style={{ height: 3, background: cfg.color }} />
+        <div style={{ padding: "14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, background: cfg.bg, padding: "2px 8px", borderRadius: 20 }}>
+              {cfg.label}
+            </span>
+            {d !== null && d >= 0 && d <= 14 && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: d <= 7 ? "#dc2626" : "#d97706" }}>
+                {d <= 7 ? `🔥 J-${d}` : `J-${d}`}
+              </span>
+            )}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#111827", lineHeight: 1.35, marginBottom: 8,
+            overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+            {opp.title}
+          </p>
+          <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 10 }}>🌍 {opp.country ?? "International"}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ flex: 1, height: 3, background: "#f3f4f6", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${score}%`, background: score >= 75 ? "#10b981" : "#f59e0b", borderRadius: 2 }} />
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 800, color: score >= 75 ? "#059669" : "#d97706" }}>{score}%</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
-
-interface Stats { applications: { total: number }; saved_count: number; documents_count: number }
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthLoading, filters, setFilter } = useStore();
   const [searchInput, setSearchInput] = useState(filters.search);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (!isAuthLoading && !user) router.push("/login"); }, [isAuthLoading, user, router]);
   useEffect(() => { const t = setTimeout(() => setFilter("search", searchInput), 400); return () => clearTimeout(t); }, [searchInput, setFilter]);
@@ -140,13 +166,12 @@ export default function DashboardPage() {
     enabled: !!user, staleTime: 2 * 60 * 1000,
   });
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ["feed", filters.type, filters.country, filters.search],
     queryFn: async ({ pageParam }) => {
       const p = new URLSearchParams({ page: String(pageParam), limit: String(LIMIT) });
       if (filters.type !== "all") p.set("type", filters.type);
-      if (filters.country) p.set("country", filters.country);
-      if (filters.search)  p.set("search", filters.search);
+      if (filters.search) p.set("search", filters.search);
       return (await api.get(`/opportunities?${p}`)).data as Opp[];
     },
     initialPageParam: 1,
@@ -166,107 +191,205 @@ export default function DashboardPage() {
     return () => obs.disconnect();
   }, [handleObserver]);
 
-  if (isAuthLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full" /></div>;
+  if (isAuthLoading) return <div className="flex items-center justify-center h-full"><div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full" /></div>;
   if (!user) return null;
 
-  const allOpps = data?.pages.flat() ?? [];
-  const hour    = new Date().getHours();
+  const allOpps  = data?.pages.flat() ?? [];
+  const heroOpps = allOpps.slice(0, 2);   // 2 grandes cartes
+  const carousel = allOpps.slice(2, 12);  // carousel horizontal
+  const listOpps = allOpps.slice(12);     // liste ensuite
+
+  const hour     = new Date().getHours();
   const greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
-  const urgentCount = allOpps.filter(o => { const d = days(o.deadline); return d !== null && d >= 0 && d <= 7; }).length;
+  const firstName = user.full_name.split(" ")[0];
+  const urgentCount = allOpps.filter(o => { const d = daysLeft(o.deadline); return d !== null && d >= 0 && d <= 7; }).length;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0 }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-      {/* Header fixe */}
-      <div style={{ background: "#fff", borderBottom: "0.5px solid #f3f4f6", padding: "12px 16px", flexShrink: 0 }}>
-        <div style={{ marginBottom: 10 }}>
-          <h2 style={{ fontWeight: 900, fontSize: 18, color: "#111827" }}>
-            {greeting}, <span style={{ color: "#059669" }}>{user.full_name.split(" ")[0]}</span> 👋
-          </h2>
-          <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
-            {isLoading ? "Calcul du feed..." : `${allOpps.length} opportunités · ${urgentCount} deadline${urgentCount > 1 ? "s" : ""} urgente${urgentCount > 1 ? "s" : ""}`}
-          </p>
+      {/* ── TOPBAR ─────────────────────────────────────────── */}
+      <div style={{ background: "#fff", borderBottom: "0.5px solid #f3f4f6", padding: "14px 24px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+          {/* Titre + salut */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontWeight: 900, fontSize: 20, color: "#111827", lineHeight: 1.2 }}>
+              {greeting}, <span style={{ color: "#059669" }}>{firstName}</span> 👋
+            </h1>
+            <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+              {isLoading ? "Calcul du feed personnalisé..." : `${allOpps.length} opportunités · ${urgentCount} deadline${urgentCount !== 1 ? "s" : ""} urgente${urgentCount !== 1 ? "s" : ""}`}
+            </p>
+          </div>
+
+          {/* Search */}
+          <div style={{ position: "relative", width: 220 }} className="hidden sm:block">
+            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#9ca3af" }}>🔍</span>
+            <input placeholder="Rechercher..."
+              value={searchInput} onChange={e => setSearchInput(e.target.value)}
+              style={{ width: "100%", border: "0.5px solid #e5e7eb", borderRadius: 10, paddingLeft: 28, paddingRight: 10,
+                paddingTop: 8, paddingBottom: 8, fontSize: 12, outline: "none", background: "#f9fafb" }} />
+          </div>
+
+          {/* Notif bell — décoratif */}
+          <div style={{ position: "relative", cursor: "pointer" }}>
+            <span style={{ fontSize: 20 }}>🔔</span>
+            {urgentCount > 0 && (
+              <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16,
+                background: "#dc2626", borderRadius: "50%", fontSize: 9, fontWeight: 800,
+                color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {urgentCount}
+              </span>
+            )}
+          </div>
+
+          {/* Avatar */}
+          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#065f46",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, fontWeight: 800, color: "#34d399", flexShrink: 0, cursor: "pointer" }}>
+            {user.full_name.split(" ").map((n: string) => n[0]).slice(0,2).join("").toUpperCase()}
+          </div>
         </div>
 
-        {/* Stats pills */}
+        {/* Stats mini row */}
         {stats && (
-          <div style={{ display: "flex", gap: 6, marginBottom: 10, overflowX: "auto" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto" }}
+            className="scrollbar-hide">
             {[
-              { dot: "#059669", val: stats.applications.total, label: "Candidatures" },
-              { dot: "#7c3aed", val: stats.saved_count,        label: "Favoris" },
-              { dot: "#2563eb", val: stats.documents_count,    label: "Documents" },
-              { dot: "#dc2626", val: urgentCount,              label: "Urgentes" },
+              { emoji: "📋", val: stats.applications.total, label: "Candidatures", color: "#2563eb" },
+              { emoji: "✅", val: stats.applications.accepted, label: "Acceptées",  color: "#059669" },
+              { emoji: "🔖", val: stats.saved_count,          label: "Favoris",     color: "#7c3aed" },
+              { emoji: "📁", val: stats.documents_count,      label: "Documents",   color: "#d97706" },
+              { emoji: "⚡", val: `${stats.profile_pct}%`,    label: "Profil",      color: "#6b7280" },
             ].map(s => (
-              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 6, background: "#f9fafb",
-                border: "0.5px solid #f3f4f6", borderRadius: 8, padding: "5px 10px", flexShrink: 0 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
-                <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>{s.val}</span>
-                <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600 }}>{s.label}</span>
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 6,
+                background: "#f9fafb", border: "0.5px solid #f3f4f6", borderRadius: 10,
+                padding: "6px 12px", flexShrink: 0, cursor: "default" }}>
+                <span style={{ fontSize: 13 }}>{s.emoji}</span>
+                <span style={{ fontWeight: 800, fontSize: 14, color: s.color }}>{s.val}</span>
+                <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>{s.label}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* Search + filtres */}
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
-            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#9ca3af" }}>🔍</span>
-            <input type="text" placeholder="Rechercher..."
-              value={searchInput} onChange={e => setSearchInput(e.target.value)}
-              style={{ width: "100%", border: "0.5px solid #e5e7eb", borderRadius: 8, paddingLeft: 28, paddingRight: 10, paddingTop: 7, paddingBottom: 7, fontSize: 12, outline: "none", background: "#f9fafb" }} />
-          </div>
-          <div style={{ display: "flex", gap: 4, overflowX: "auto", flexShrink: 0 }}>
-            {TYPES.map(t => (
-              <button key={t.value} onClick={() => setFilter("type", t.value)}
-                style={{
-                  flexShrink: 0, display: "flex", alignItems: "center", gap: 4,
-                  fontSize: 11, fontWeight: 600, padding: "6px 10px", borderRadius: 8,
-                  border: "none", cursor: "pointer", transition: "all .1s",
-                  background: filters.type === t.value ? "#059669" : "#f3f4f6",
-                  color: filters.type === t.value ? "#fff" : "#6b7280",
-                }}>
-                {t.emoji} {t.label}
-              </button>
-            ))}
-          </div>
+        {/* Filtres types */}
+        <div style={{ display: "flex", gap: 6, overflowX: "auto" }} className="scrollbar-hide">
+          {TYPES.map(t => (
+            <button key={t.value} onClick={() => setFilter("type", t.value)}
+              style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, padding: "6px 12px",
+                borderRadius: 20, border: "none", cursor: "pointer", transition: "all .1s",
+                background: filters.type === t.value ? "#059669" : "#f3f4f6",
+                color: filters.type === t.value ? "#fff" : "#6b7280" }}>
+              {t.emoji} {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Feed scrollable */}
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+      {/* ── CONTENU SCROLLABLE ─────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
 
-        {/* Coaching card */}
-        <div style={{ padding: "12px 16px 0" }}>
-          <CoachingCard />
-        </div>
+        {/* CoachingCard */}
+        <CoachingCard />
 
-        {/* Liste opportunités */}
-        {isLoading && Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
-
-        {isError && (
-          <div style={{ textAlign: "center", padding: "60px 20px" }}>
-            <p style={{ fontSize: 32, marginBottom: 8 }}>⚠️</p>
-            <p style={{ color: "#6b7280" }}>Impossible de charger le feed</p>
+        {/* ── Section : Top recommandations ─────────────────── */}
+        {!isLoading && heroOpps.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+              <div>
+                <h2 style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>Top pour toi</h2>
+                <p style={{ fontSize: 12, color: "#9ca3af" }}>Les meilleures correspondances avec ton profil</p>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+              {heroOpps.map(opp => <HeroCard key={opp.id} opp={opp} />)}
+            </div>
           </div>
         )}
 
-        {!isLoading && allOpps.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 20px" }}>
-            <p style={{ fontSize: 32, marginBottom: 8 }}>🔍</p>
-            <p style={{ fontWeight: 700, color: "#374151", marginBottom: 12 }}>Aucun résultat</p>
-            <button onClick={() => { setFilter("type", "all"); setSearchInput(""); }}
-              style={{ fontSize: 12, fontWeight: 700, color: "#059669", border: "1px solid #bbf7d0", background: "#f0fdf4", padding: "8px 16px", borderRadius: 10, cursor: "pointer" }}>
-              Réinitialiser
-            </button>
+        {/* ── Carousel horizontal ────────────────────────────── */}
+        {!isLoading && carousel.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+              <div>
+                <h2 style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>Explorer</h2>
+                <p style={{ fontSize: 12, color: "#9ca3af" }}>Fais défiler → pour voir plus</p>
+              </div>
+            </div>
+            <div ref={carouselRef}
+              style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}
+              className="scrollbar-hide">
+              {carousel.map(opp => <CompactCard key={opp.id} opp={opp} />)}
+            </div>
           </div>
         )}
 
-        {allOpps.map((opp, i) => (
-          <OppRow key={opp.id} opp={opp} style={{ animationDelay: `${Math.min(i % 10, 9) * 25}ms` }} />
-        ))}
+        {/* ── Skeletons ──────────────────────────────────────── */}
+        {isLoading && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginBottom: 28 }}>
+              {[1,2].map(i => (
+                <div key={i} style={{ background: "#fff", borderRadius: 20, border: "0.5px solid #f3f4f6", height: 180 }}
+                  className="animate-pulse" />
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 12, overflow: "hidden", marginBottom: 28 }}>
+              {[1,2,3,4].map(i => (
+                <div key={i} style={{ width: 260, flexShrink: 0, background: "#fff", borderRadius: 16,
+                  border: "0.5px solid #f3f4f6", height: 140 }} className="animate-pulse" />
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Sentinel infinite scroll */}
-        <div ref={sentinelRef} style={{ padding: "20px 0", textAlign: "center" }}>
+        {/* ── Suite liste ────────────────────────────────────── */}
+        {listOpps.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontWeight: 800, fontSize: 16, color: "#111827", marginBottom: 14 }}>Toutes les opportunités</h2>
+            <div style={{ background: "#fff", borderRadius: 16, border: "0.5px solid #f3f4f6", overflow: "hidden" }}>
+              {listOpps.map((opp, i) => {
+                const cfg   = TYPE_CFG[opp.type] ?? { label: opp.type, color: "#6b7280", bg: "#f3f4f6", accent: "#374151" };
+                const d     = daysLeft(opp.deadline);
+                const score = Math.round(opp.relevance_score ?? 0);
+                return (
+                  <div key={opp.id}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                      borderBottom: i < listOpps.length - 1 ? "0.5px solid #f9fafb" : "none" }}
+                    className="hover:bg-gray-50 transition-colors">
+                    <div style={{ width: 3, background: cfg.color, borderRadius: 2, alignSelf: "stretch", minHeight: 36, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Link href={`/opportunity/${opp.id}`}
+                        style={{ fontWeight: 700, fontSize: 13, color: "#111827", textDecoration: "none", display: "block", marginBottom: 4 }}
+                        className="hover:text-emerald-600 transition-colors">
+                        {opp.title}
+                      </Link>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, background: cfg.bg, padding: "1px 7px", borderRadius: 20 }}>
+                          {cfg.label}
+                        </span>
+                        {opp.country && <span style={{ fontSize: 10, color: "#9ca3af" }}>🌍 {opp.country}</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                      {d !== null && d >= 0 && (
+                        <span style={{ fontSize: 10, fontWeight: 700,
+                          color: d <= 7 ? "#dc2626" : "#9ca3af",
+                          background: d <= 7 ? "#fee2e2" : "#f3f4f6",
+                          padding: "2px 8px", borderRadius: 20 }}>
+                          J-{d}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 11, fontWeight: 800, color: score >= 75 ? "#059669" : "#d97706" }}>{score}%</span>
+                      <SaveButton oppId={opp.id} compact />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sentinel */}
+        <div ref={sentinelRef} style={{ padding: "12px 0", textAlign: "center" }}>
           {isFetchingNextPage && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "#9ca3af" }}>
               <div className="animate-spin" style={{ width: 14, height: 14, border: "2px solid #10b981", borderTopColor: "transparent", borderRadius: "50%" }} />
@@ -274,7 +397,7 @@ export default function DashboardPage() {
             </div>
           )}
           {!hasNextPage && allOpps.length > 0 && (
-            <p style={{ fontSize: 11, color: "#d1d5db" }}>{allOpps.length} opportunités affichées</p>
+            <p style={{ fontSize: 11, color: "#d1d5db" }}>Toutes les opportunités affichées — {allOpps.length} au total</p>
           )}
         </div>
       </div>

@@ -96,13 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           );
         })}
 
-        <p className="text-[9px] font-bold uppercase tracking-widest px-2 pt-4 pb-1.5" style={{ color: "#374151" }}>Autre</p>
-        <Link href="/org"
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all mb-0.5"
-          style={{ color: "#6b7280" }}>
-          <span className="text-sm w-4">🏢</span>
-          <span>Espace Organisation</span>
-        </Link>
+
       </nav>
 
       {/* Profil progress + déconnexion */}

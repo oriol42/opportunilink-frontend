@@ -1,4 +1,5 @@
 "use client";
+import FloatingCoach from "@/components/FloatingCoach";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStore } from "@/store/useStore";
@@ -160,6 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </nav>
       </div>
+      <FloatingCoach />
     </div>
   );
 }

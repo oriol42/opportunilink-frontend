@@ -1,16 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { SessionInitializer } from "@/components/SessionInitializer";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
 
 export const metadata: Metadata = {
   title: "OpportuLink — Ton avenir commence ici",
@@ -28,14 +20,14 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
   return (
-    <html lang="fr" className={inter.variable}>
+    <html lang="fr">
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
         {plausibleDomain && (
           <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
         )}
       </head>
-      <body className={inter.className}>
+      <body style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif", margin: 0 }}>
         <Providers>
           <SessionInitializer />
           <ServiceWorkerRegistrar />

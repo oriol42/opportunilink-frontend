@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import CVBuilder from "@/components/ai/CVBuilder";
+import ApplyButton from "@/components/opportunity/ApplyButton";
 import SaveButton from "@/components/opportunity/SaveButton";
 import ShareButton from "@/components/opportunity/ShareButton";
 import { useToast } from "@/components/ui/Toast";
@@ -73,45 +74,7 @@ function PrepSection({ oppId }: { oppId: string }) {
   );
 }
 
-// ── Postuler ──────────────────────────────────────────────────
-function ApplySection({ oppId, oppTitle }: { oppId: string; oppTitle: string }) {
-  const router = useRouter();
-  const { success, error: toastError, warning } = useToast();
-  const [state, setState] = useState<"idle"|"loading"|"done"|"already">("idle");
 
-  async function apply() {
-    setState("loading");
-    try {
-      await api.post("/applications", { opportunity_id: oppId });
-      setState("done");
-      success("Candidature créée ! Retrouve-la dans tes candidatures.");
-    } catch (err: unknown) {
-      const s = (err as { response?: { status?: number } }).response?.status;
-      if (s === 400) { setState("already"); warning("Tu as déjà une candidature pour cette opportunité."); }
-      else { setState("idle"); toastError("Erreur. Réessaie."); }
-    }
-  }
-
-  if (state === "done" || state === "already") {
-    return (
-      <button onClick={() => router.push("/dashboard/applications")}
-        style={{ width:"100%", background:"#f1f5f9", color:"#374151", fontWeight:700,
-          fontSize:14, padding:"14px", borderRadius:14, border:"none", cursor:"pointer" }}>
-        {state === "done" ? "✓ Voir mes candidatures →" : "Déjà candidaté → Voir mes candidatures"}
-      </button>
-    );
-  }
-
-  return (
-    <button onClick={apply} disabled={state === "loading"}
-      style={{ width:"100%", fontWeight:800, fontSize:15, padding:"16px", borderRadius:14, border:"none",
-        cursor:state === "loading" ? "not-allowed" : "pointer",
-        background:state === "loading" ? "#d1d5db" : "linear-gradient(135deg,#059669,#0d9488)",
-        color:"#fff", boxShadow:"0 4px 16px rgba(5,150,105,0.3)", transition:"all .15s" }}>
-      {state === "loading" ? "Création..." : "Postuler à cette opportunité →"}
-    </button>
-  );
-}
 
 // ── Lettre IA ────────────────────────────────────────────────
 function LetterSection({ oppId }: { oppId: string }) {
@@ -333,7 +296,7 @@ export default function OpportunityDetailPage() {
           <PrepSection oppId={id} />
 
           {/* Postuler */}
-          <ApplySection oppId={id} oppTitle={opp.title} />
+          <ApplyButton oppId={id} oppTitle={opp.title} sourceUrl={opp.source_url} />
 
           {/* Lettre IA */}
           <LetterSection oppId={id} />

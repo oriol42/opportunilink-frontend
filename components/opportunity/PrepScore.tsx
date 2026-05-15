@@ -52,7 +52,7 @@ export default function PrepScore({ data }: { data: PrepScoreData }) {
           </div>
           <div style={{ textAlign:"right" }}>
             <p style={{ fontWeight:900, fontSize:32, color:style.text, lineHeight:1 }}>{data.score}%</p>
-            <p style={{ fontSize:11, color:"#94a3b8", marginTop:2 }}>{data.ok_count}/{data.checks.length} ✓</p>
+            <p style={{ fontSize:11, color:"#94a3b8", marginTop:2 }}>{data.checks.filter(c=>c.ok).length}/{data.checks.length} ✓</p>
           </div>
         </div>
         <div style={{ background:"rgba(255,255,255,0.7)", height:8, borderRadius:4, overflow:"hidden", marginBottom:12 }}>

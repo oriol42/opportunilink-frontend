@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@/store/useStore";
@@ -31,7 +31,7 @@ const ESSENTIAL = [
   { key:"has_attestation", type:"attestation",  icon:"📜", label:"Attestation",     impact:"Requis pour les programmes d'échange" },
 ];
 
-export default function DocumentsPage() {
+function DocumentsInner() {
   const router = useRouter();
   const { user, isAuthLoading } = useStore();
   const queryClient = useQueryClient();
@@ -373,5 +373,13 @@ export default function DocumentsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DocumentsPage() {
+  return (
+    <Suspense fallback={<div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"80vh" }}><div className="animate-spin rounded-full" style={{ width:40, height:40, border:"3px solid #10b981", borderTopColor:"transparent" }} /></div>}>
+      <DocumentsInner />
+    </Suspense>
   );
 }

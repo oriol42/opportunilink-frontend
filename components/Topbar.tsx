@@ -1,9 +1,9 @@
 "use client";
 import ThemeToggle from "@/components/ThemeToggle";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
-export default function Topbar() {
+function TopbarInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -44,6 +44,35 @@ export default function Topbar() {
   }
 
   return (
+    <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 560 }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+        background: "var(--bg-input)", borderRadius: 11,
+        border: "1px solid var(--border)", padding: "10px 16px",
+      }}>
+        <span style={{ fontSize: 16, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
+        <input
+          value={q}
+          onChange={e => handleChange(e.target.value)}
+          placeholder="Rechercher une opportunité, pays, type..."
+          style={{
+            flex: 1, border: "none", background: "transparent", outline: "none",
+            fontSize: 15, color: "var(--text-primary)", fontWeight: 500,
+          }}
+        />
+        {q && (
+          <button type="button" onClick={handleClear} style={{
+            background: "none", border: "none", cursor: "pointer",
+            fontSize: 16, color: "var(--text-muted)", padding: 0, lineHeight: 1,
+          }}>✕</button>
+        )}
+      </div>
+    </form>
+  );
+}
+
+export default function Topbar() {
+  return (
     <header style={{
       position: "sticky", top: 0, zIndex: 50,
       background: "var(--topbar-bg)", backdropFilter: "blur(12px)",
@@ -51,30 +80,16 @@ export default function Topbar() {
       padding: "10px 24px", display: "flex", alignItems: "center", gap: 12,
       minHeight: 58,
     }}>
-      <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 560 }}>
+      <Suspense fallback={
         <div style={{
-          display: "flex", alignItems: "center", gap: 10,
+          flex: 1, maxWidth: 560,
           background: "var(--bg-input)", borderRadius: 11,
           border: "1px solid var(--border)", padding: "10px 16px",
-        }}>
-          <span style={{ fontSize: 16, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
-          <input
-            value={q}
-            onChange={e => handleChange(e.target.value)}
-            placeholder="Rechercher une opportunité, pays, type..."
-            style={{
-              flex: 1, border: "none", background: "transparent", outline: "none",
-              fontSize: 15, color: "var(--text-primary)", fontWeight: 500,
-            }}
-          />
-          {q && (
-            <button type="button" onClick={handleClear} style={{
-              background: "none", border: "none", cursor: "pointer",
-              fontSize: 16, color: "var(--text-muted)", padding: 0, lineHeight: 1,
-            }}>✕</button>
-          )}
-        </div>
-      </form>
+          height: 44,
+        }} />
+      }>
+        <TopbarInner />
+      </Suspense>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
         <ThemeToggle />
       </div>

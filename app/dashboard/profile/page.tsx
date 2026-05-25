@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useStore } from "@/store/useStore";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
@@ -85,7 +85,7 @@ const SECTIONS = [
 ] as const;
 type SectionKey = typeof SECTIONS[number]["key"];
 
-export default function ProfilePage() {
+function ProfileInner() {
   const { user, setUser } = useStore();
   const { success, error: toastError } = useToast();
   const [form, setForm] = useState({
@@ -596,5 +596,13 @@ export default function ProfilePage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"80vh" }}><div className="animate-spin rounded-full" style={{ width:40, height:40, border:"3px solid #10b981", borderTopColor:"transparent" }} /></div>}>
+      <ProfileInner />
+    </Suspense>
   );
 }

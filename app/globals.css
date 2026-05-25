@@ -25,3 +25,131 @@
   }
   .grid > * { min-width: 0; }
 }
+
+/* ── Responsive dashboard ── */
+.dashboard-grid {
+  grid-template-columns: minmax(0, 1fr) 300px !important;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Cards internes — 1 colonne sous 600px */
+@media (max-width: 600px) {
+  [style*="repeat(auto-fill,minmax(280px"] {
+    grid-template-columns: 1fr !important;
+  }
+  [style*="repeat(auto-fill,minmax(260px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hero padding réduit sur mobile */
+  [style*="padding:\"28px 32px"] {
+    padding: 20px 16px 24px !important;
+  }
+
+  /* Tabs — texte plus petit */
+  [style*="fontSize:11"] {
+    font-size: 10px !important;
+  }
+}
+
+/* ── Responsive profil ── */
+@media (max-width: 900px) {
+  [style*="gridTemplateColumns:\"300px 1fr\""] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Responsive documents ── */
+@media (max-width: 900px) {
+  [style*="gridTemplateColumns:\"340px 1fr\""] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Responsive opportunité détail ── */
+@media (max-width: 900px) {
+  [style*="gridTemplateColumns:\"1fr 380px\""] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Responsive candidatures stats ── */
+@media (max-width: 600px) {
+  [style*="gridTemplateColumns:\"repeat(4, 1fr)\""] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── OpportuLink Design System ── */
+:root {
+  --bg-base: #f0f4f8;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hero: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #0f172a 100%);
+  --bg-input: #f1f5f9;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --accent: #10b981;
+  --accent-light: #d1fae5;
+  --accent-dark: #059669;
+  --sidebar-active-bg: #f0fdf4;
+  --sidebar-active-border: #bbf7d0;
+  --sidebar-active-text: #065f46;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --topbar-bg: rgba(255,255,255,0.85);
+  --topbar-border: #e2e8f0;
+}
+
+[data-theme="dark"] {
+  --bg-base: #060b12;
+  --bg-surface: #0d1117;
+  --bg-surface-2: #131e2e;
+  --bg-sidebar: #0d1117;
+  --bg-card: #0d1117;
+  --bg-hero: linear-gradient(135deg, #0a2e1a 0%, #0d1f0e 40%, #0a1628 100%);
+  --bg-input: #131e2e;
+  --border: #1e2a3a;
+  --border-subtle: #1a2332;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #4b5563;
+  --text-inverse: #ffffff;
+  --accent: #10b981;
+  --accent-light: rgba(16,185,129,0.15);
+  --accent-dark: #34d399;
+  --sidebar-active-bg: rgba(16,185,129,0.1);
+  --sidebar-active-border: rgba(16,185,129,0.25);
+  --sidebar-active-text: #34d399;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --topbar-bg: rgba(13,17,23,0.9);
+  --topbar-border: #1e2a3a;
+}
+
+* { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.1s ease; }
+
+.opp-hover:hover {
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px);
+}
+.sidebar-item:hover {
+  background: var(--bg-surface-2) !important;
+}
+
+@keyframes progress-bar {
+  0%   { transform: translateX(-100%); width: 60%; }
+  50%  { transform: translateX(60%);  width: 40%; }
+  100% { transform: translateX(200%); width: 60%; }
+}

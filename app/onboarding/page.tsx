@@ -34,6 +34,66 @@ const STEPS = [
   { key:"gpa",       title:"Ta moyenne (optionnel)",        subtitle:"Débloque les bourses avec GPA minimum" },
 ];
 
+
+function FieldStep({ value, onChange }: { value: string; onChange: (f: string) => void }) {
+  const [search, setSearch] = useState("");
+  const filtered = search.length > 0
+    ? FIELDS.filter(f => f.toLowerCase().includes(search.toLowerCase()))
+    : FIELDS;
+
+  return (
+    <div>
+      <div style={{ position: "relative", marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Chercher une filière..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ width: "100%", padding: "12px 16px", border: "1.5px solid #e5e7eb",
+            borderRadius: 12, fontSize: 14, outline: "none", boxSizing: "border-box" }}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94a3b8" }}>
+            ✕
+          </button>
+        )}
+      </div>
+      {value && (
+        <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 14px",
+          border: "1px solid #bbf7d0", marginBottom: 12, display: "flex",
+          alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#065f46" }}>✅ {value}</span>
+          <button type="button" onClick={() => onChange("")}
+            style={{ background: "none", border: "none", cursor: "pointer",
+              fontSize: 12, color: "#94a3b8" }}>Changer</button>
+        </div>
+      )}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8,
+        maxHeight: 300, overflowY: "auto" }}>
+        {filtered.length === 0 && (
+          <div style={{ gridColumn: "span 2", textAlign: "center", padding: "20px",
+            color: "#94a3b8", fontSize: 13 }}>Aucune filière trouvée</div>
+        )}
+        {filtered.map(f => (
+          <button key={f} type="button" onClick={() => { onChange(f); setSearch(""); }}
+            style={{ padding: "10px 14px", borderRadius: 12, border: "1.5px solid",
+              borderColor: value === f ? "#10b981" : "#f1f5f9",
+              background: value === f ? "#f0fdf4" : "#fafafa",
+              color: value === f ? "#065f46" : "#374151",
+              fontWeight: 600, fontSize: 13, cursor: "pointer", transition: "all .15s",
+              textAlign: "left" }}>
+            {value === f ? "✅ " : ""}{f}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { setUser } = useStore();
@@ -133,31 +193,10 @@ export default function OnboardingPage() {
 
           {/* Step 1 — Filière */}
           {step === 1 && (
-            <div>
-              <div style={{ position: "relative", marginBottom: 16 }}>
-                <input type="text" placeholder="Chercher une filière..."
-                  style={{ width: "100%", padding: "12px 16px", border: "1.5px solid #e5e7eb",
-                    borderRadius: 12, fontSize: 14, outline: "none", boxSizing: "border-box" }}
-                  onChange={e => {
-                    const val = e.target.value;
-                    if (val.length > 2) setForm({...form, field: val});
-                  }} />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8,
-                maxHeight: 320, overflowY: "auto" }}>
-                {FIELDS.map(f => (
-                  <button key={f} type="button" onClick={() => setForm({...form, field: f})}
-                    style={{ padding: "10px 14px", borderRadius: 12, border: "1.5px solid",
-                      borderColor: form.field === f ? "#10b981" : "#f1f5f9",
-                      background: form.field === f ? "#f0fdf4" : "#fafafa",
-                      color: form.field === f ? "#065f46" : "#374151",
-                      fontWeight: 600, fontSize: 13, cursor: "pointer", transition: "all .15s",
-                      textAlign: "left" }}>
-                    {form.field === f ? "✅ " : ""}{f}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <FieldStep
+              value={form.field}
+              onChange={field => setForm({...form, field})}
+            />
           )}
 
           {/* Step 2 — Objectif */}

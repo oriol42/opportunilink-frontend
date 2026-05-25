@@ -296,7 +296,7 @@ export default function DocumentsPage() {
                       {vault.documents.length} fichier{vault.documents.length>1?"s":""}
                     </span>
                   </div>
-                  <div style={{ divide:"y" }}>
+                  <div style={{ borderTop:"1px solid #f1f5f9" }}>
                     {vault.documents.map((doc, idx) => {
                       const docType = DOC_TYPES.find(d => d.value === doc.type);
                       const date = new Date(doc.created_at).toLocaleDateString("fr-FR",

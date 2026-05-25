@@ -1,58 +1,77 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { useToast } from "@/components/ui/Toast";
 
-interface SaveButtonProps {
+interface Props {
   oppId: string;
-  initialSaved?: boolean;
-  compact?: boolean;   // true = icône seule, false = icône + texte
+  compact?: boolean;
 }
 
-export default function SaveButton({ oppId, initialSaved = false, compact = false }: SaveButtonProps) {
-  const [saved, setSaved] = useState(initialSaved);
+export default function SaveButton({ oppId, compact }: Props) {
+  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { success, error } = useToast();
 
-  async function handleToggle(e: React.MouseEvent) {
-    e.preventDefault(); // Empêche la navigation si dans un <Link>
-    e.stopPropagation();
+  useEffect(() => {
+    // Vérifie si déjà sauvegardé via localStorage pour éviter un appel API
+    const savedList = JSON.parse(localStorage.getItem("saved_opps") || "[]");
+    setSaved(savedList.includes(oppId));
+  }, [oppId]);
+
+  async function toggle() {
+    if (loading) return;
     setLoading(true);
     try {
       const res = await api.post(`/opportunities/${oppId}/save`);
-      const nowSaved: boolean = res.data.saved;
-      setSaved(nowSaved);
-      if (nowSaved) {
-        success("Opportunité sauvegardée !");
+      const isSaved = res.data.saved;
+      setSaved(isSaved);
+      // Sync localStorage
+      const savedList: string[] = JSON.parse(localStorage.getItem("saved_opps") || "[]");
+      if (isSaved) {
+        localStorage.setItem("saved_opps", JSON.stringify([...savedList, oppId]));
       } else {
-        success("Retiré des favoris");
+        localStorage.setItem("saved_opps", JSON.stringify(savedList.filter((id: string) => id !== oppId)));
       }
     } catch {
-      error("Impossible de sauvegarder. Réessaie.");
+      // silently fail
     } finally {
       setLoading(false);
     }
   }
 
+  if (compact) {
+    return (
+      <button
+        onClick={e => { e.preventDefault(); toggle(); }}
+        title={saved ? "Retirer des favoris" : "Sauvegarder"}
+        style={{
+          width: 34, height: 34, borderRadius: 8, border: "none",
+          background: saved ? "rgba(239,68,68,.12)" : "var(--bg-surface-2)",
+          cursor: loading ? "wait" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0, transition: "all .15s",
+          fontSize: 16,
+        }}
+      >
+        {saved ? "❤️" : "🤍"}
+      </button>
+    );
+  }
+
   return (
     <button
-      onClick={handleToggle}
+      onClick={toggle}
       disabled={loading}
-      aria-label={saved ? "Retirer des favoris" : "Sauvegarder"}
-      className={`
-        flex items-center gap-1.5 font-semibold text-xs rounded-xl
-        transition-all duration-150 disabled:opacity-50
-        ${saved
-          ? "text-amber-600 bg-amber-100 hover:bg-amber-200"
-          : "text-gray-500 bg-gray-100 hover:bg-gray-200 hover:text-gray-700"
-        }
-        ${compact ? "p-2" : "px-3 py-2"}
-      `}
+      style={{
+        display: "flex", alignItems: "center", gap: 7,
+        padding: "10px 18px", borderRadius: 10, border: "1.5px solid",
+        borderColor: saved ? "rgba(239,68,68,.3)" : "var(--border)",
+        background: saved ? "rgba(239,68,68,.08)" : "var(--bg-surface-2)",
+        color: saved ? "#dc2626" : "var(--text-secondary)",
+        fontWeight: 700, fontSize: 14, cursor: loading ? "wait" : "pointer",
+        transition: "all .15s",
+      }}
     >
-      <span className={`text-base transition-transform ${loading ? "animate-pulse" : saved ? "scale-110" : "scale-100"}`}>
-        {saved ? "🔖" : "🏷️"}
-      </span>
-      {!compact && (saved ? "Sauvegardé" : "Sauvegarder")}
+      {saved ? "❤️ Sauvegardé" : "🤍 Sauvegarder"}
     </button>
   );
 }

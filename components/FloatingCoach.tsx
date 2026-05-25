@@ -8,18 +8,31 @@ interface Msg { role: "user" | "assistant"; content: string }
 const SUGG = [
   "Quelles bourses me correspondent ?",
   "Comment améliorer mon dossier ?",
-  "Aide-moi avec ma lettre",
+  "Aide-moi avec ma lettre de motivation",
   "Que faire avant la deadline ?",
 ];
 
 function Dots() {
   return (
-    <div style={{ display:"flex", gap:3, padding:"10px 14px" }}>
+    <div style={{ display:"flex", gap:4, padding:"12px 16px", alignItems:"center" }}>
+      <span style={{ fontSize:11, color:"#6b7280", marginRight:4 }}>Coach réfléchit</span>
       {[0,1,2].map(i => (
         <span key={i} style={{ width:5, height:5, borderRadius:"50%", background:"#10b981",
-          animation:`db 1.2s ease ${i*.2}s infinite` }} />
+          display:"inline-block",
+          animation:`bounce 1.2s ease ${i*.2}s infinite` }} />
       ))}
-      <style>{`@keyframes db{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}`}</style>
+      <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}`}</style>
+    </div>
+  );
+}
+
+function CoachAvatar({ size=36 }: { size?: number }) {
+  return (
+    <div style={{ width:size, height:size, borderRadius:"50%", flexShrink:0,
+      background:"linear-gradient(135deg,#059669,#0d9488)",
+      display:"flex", alignItems:"center", justifyContent:"center",
+      boxShadow:"0 2px 8px rgba(5,150,105,0.35)", fontSize:size*0.45 }}>
+      ✦
     </div>
   );
 }
@@ -33,12 +46,12 @@ export default function FloatingCoach() {
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Message d'accueil à l'ouverture
   useEffect(() => {
     if (open && msgs.length === 0 && user) {
+      const firstName = user.full_name?.split(" ")[0] ?? "toi";
       setMsgs([{
         role: "assistant",
-        content: `Bonjour ${user.full_name?.split(" ")[0]} ! 👋\nJe suis ton coach IA. Comment puis-je t'aider ?`,
+        content: `Salut ${firstName} ! 👋\n\nJe suis ton coach carrière personnel. Je connais ton profil et les opportunités disponibles — je suis là pour t'aider concrètement.\n\nTu veux qu'on fasse quoi aujourd'hui ?`,
       }]);
     }
   }, [open, user]);
@@ -69,7 +82,7 @@ export default function FloatingCoach() {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setMsgs(prev => [...prev, {
         role: "assistant",
-        content: detail ?? "Erreur de connexion. Vérifie ta connexion et réessaie.",
+        content: detail ?? "Oups, j'ai perdu la connexion. Réessaie dans un instant.",
       }]);
     } finally {
       setLoading(false);
@@ -80,52 +93,61 @@ export default function FloatingCoach() {
 
   return (
     <>
-      {/* Panel */}
       {open && (
         <div style={{
-          position:"fixed", bottom:84, right:20, width:340, height:480,
-          background:"#fff", borderRadius:20,
-          boxShadow:"0 25px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)",
+          position:"fixed", bottom:84, right:20, width:360, height:500,
+          background:"#fff", borderRadius:24,
+          boxShadow:"0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)",
           zIndex:9999, display:"flex", flexDirection:"column", overflow:"hidden",
         }}>
           {/* Header */}
-          <div style={{ background:"linear-gradient(135deg,#0f172a,#065f46)",
-            padding:"14px 16px", display:"flex", alignItems:"center", gap:10, flexShrink:0 }}>
-            <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(16,185,129,0.2)",
-              border:"1.5px solid #10b981", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-              🤖
-            </div>
+          <div style={{ padding:"16px 18px", borderBottom:"1px solid #f1f5f9",
+            display:"flex", alignItems:"center", gap:12, flexShrink:0,
+            background:"linear-gradient(135deg,#f0fdf4,#f8fafc)" }}>
+            <CoachAvatar size={40} />
             <div style={{ flex:1 }}>
-              <p style={{ fontWeight:800, fontSize:13, color:"#fff" }}>Coach IA</p>
-              <p style={{ fontSize:10, color:"#34d399" }}>● Llama 3.3 · En ligne</p>
+              <p style={{ fontWeight:800, fontSize:14, color:"#111827", lineHeight:1.2 }}>Coach IA</p>
+              <p style={{ fontSize:11, color:"#059669", fontWeight:600 }}>● En ligne · Prêt à t'aider</p>
             </div>
             <button onClick={() => setOpen(false)}
-              style={{ background:"rgba(255,255,255,0.1)", border:"none", cursor:"pointer",
-                color:"rgba(255,255,255,0.7)", fontSize:16, width:28, height:28,
-                borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              style={{ background:"#f1f5f9", border:"none", cursor:"pointer",
+                color:"#6b7280", fontSize:14, width:30, height:30,
+                borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center",
+                transition:"all .15s" }}
+              onMouseEnter={e=>(e.currentTarget.style.background="#e2e8f0")}
+              onMouseLeave={e=>(e.currentTarget.style.background="#f1f5f9")}>
               ✕
             </button>
           </div>
 
           {/* Messages */}
-          <div style={{ flex:1, overflowY:"auto", padding:"14px", display:"flex", flexDirection:"column", gap:10 }}>
+          <div style={{ flex:1, overflowY:"auto", padding:"16px", display:"flex",
+            flexDirection:"column", gap:12 }}>
             {msgs.map((m, i) => (
-              <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start" }}>
+              <div key={i} style={{ display:"flex", gap:8,
+                justifyContent:m.role==="user"?"flex-end":"flex-start",
+                alignItems:"flex-end" }}>
+                {m.role==="assistant" && <CoachAvatar size={28} />}
                 <div style={{
-                  maxWidth:"82%", padding:"9px 13px",
-                  borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px",
-                  background:m.role==="user"?"#059669":"#f8fafc",
-                  border:m.role==="assistant"?"1px solid #f1f5f9":"none",
+                  maxWidth:"80%", padding:"10px 14px",
+                  borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px",
+                  background:m.role==="user"
+                    ?"linear-gradient(135deg,#059669,#0d9488)"
+                    :"#f8fafc",
+                  border:m.role==="assistant"?"1px solid #e2e8f0":"none",
                   color:m.role==="user"?"#fff":"#1e293b",
-                  fontSize:13, lineHeight:1.55, whiteSpace:"pre-wrap",
+                  fontSize:13, lineHeight:1.6, whiteSpace:"pre-wrap",
+                  boxShadow:m.role==="user"?"0 2px 8px rgba(5,150,105,0.25)":"none",
                 }}>
                   {m.content}
                 </div>
               </div>
             ))}
             {loading && (
-              <div style={{ display:"flex" }}>
-                <div style={{ background:"#f8fafc", border:"1px solid #f1f5f9", borderRadius:"16px 16px 16px 4px" }}>
+              <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
+                <CoachAvatar size={28} />
+                <div style={{ background:"#f8fafc", border:"1px solid #e2e8f0",
+                  borderRadius:"18px 18px 18px 4px" }}>
                   <Dots />
                 </div>
               </div>
@@ -135,13 +157,16 @@ export default function FloatingCoach() {
 
           {/* Suggestions */}
           {msgs.length <= 1 && (
-            <div style={{ padding:"0 12px 8px", display:"flex", gap:5, overflowX:"auto", flexShrink:0 }}
-              className="scrollbar-hide">
+            <div style={{ padding:"0 14px 10px", display:"flex", gap:6,
+              overflowX:"auto", flexShrink:0 }} className="scrollbar-hide">
               {SUGG.map(s => (
                 <button key={s} onClick={() => send(s)}
-                  style={{ flexShrink:0, fontSize:10, fontWeight:700, color:"#059669",
+                  style={{ flexShrink:0, fontSize:11, fontWeight:600, color:"#059669",
                     background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:20,
-                    padding:"5px 10px", cursor:"pointer", whiteSpace:"nowrap" }}>
+                    padding:"6px 12px", cursor:"pointer", whiteSpace:"nowrap",
+                    transition:"all .15s" }}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#dcfce7";e.currentTarget.style.borderColor="#86efac"}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="#f0fdf4";e.currentTarget.style.borderColor="#bbf7d0"}}>
                   {s}
                 </button>
               ))}
@@ -149,38 +174,45 @@ export default function FloatingCoach() {
           )}
 
           {/* Input */}
-          <div style={{ padding:"10px 12px", borderTop:"1px solid #f1f5f9", flexShrink:0,
-            display:"flex", gap:8, alignItems:"center", background:"#fff" }}>
+          <div style={{ padding:"12px 14px", borderTop:"1px solid #f1f5f9", flexShrink:0,
+            display:"flex", gap:8, alignItems:"center", background:"#fafafa" }}>
             <input ref={inputRef} value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && send()}
-              placeholder="Pose une question..."
-              style={{ flex:1, border:"1px solid #e2e8f0", borderRadius:12, padding:"9px 13px",
-                fontSize:13, outline:"none", background:"#f8fafc" }} />
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
+              placeholder="Pose ta question..."
+              style={{ flex:1, border:"1.5px solid #e2e8f0", borderRadius:14, padding:"10px 14px",
+                fontSize:13, outline:"none", background:"#fff", transition:"border-color .15s" }}
+              onFocus={e=>e.target.style.borderColor="#10b981"}
+              onBlur={e=>e.target.style.borderColor="#e2e8f0"} />
             <button onClick={() => send()} disabled={!input.trim() || loading}
-              style={{ width:36, height:36, borderRadius:"50%", border:"none", cursor:"pointer",
-                background:input.trim() && !loading ? "#059669" : "#e2e8f0",
+              style={{ width:38, height:38, borderRadius:"50%", border:"none", cursor:"pointer",
+                background:input.trim() && !loading
+                  ? "linear-gradient(135deg,#059669,#0d9488)" : "#f1f5f9",
                 color:input.trim() && !loading ? "#fff" : "#94a3b8",
-                fontSize:18, display:"flex", alignItems:"center", justifyContent:"center",
-                flexShrink:0, transition:"all .15s" }}>
+                fontSize:16, display:"flex", alignItems:"center", justifyContent:"center",
+                flexShrink:0, transition:"all .2s",
+                boxShadow:input.trim() && !loading ? "0 2px 8px rgba(5,150,105,0.3)" : "none" }}>
               ↑
             </button>
           </div>
         </div>
       )}
 
-      {/* FAB */}
+      {/* FAB — plus élégant */}
       <button onClick={() => setOpen(o => !o)}
         style={{
-          position:"fixed", bottom:20, right:20, width:54, height:54,
+          position:"fixed", bottom:20, right:20, width:52, height:52,
           borderRadius:"50%", border:"none", cursor:"pointer",
-          background:open ? "#374151" : "linear-gradient(135deg,#059669,#0d9488)",
-          color:"#fff", fontSize:24, zIndex:9999,
-          boxShadow:"0 4px 24px rgba(5,150,105,0.45)",
+          background:open
+            ? "#f1f5f9"
+            : "linear-gradient(135deg,#059669,#0d9488)",
+          color:open?"#6b7280":"#fff",
+          fontSize:open?16:20, zIndex:9999,
+          boxShadow:open?"0 2px 8px rgba(0,0,0,0.12)":"0 4px 20px rgba(5,150,105,0.45)",
           display:"flex", alignItems:"center", justifyContent:"center",
-          transition:"all .2s",
+          transition:"all .25s",
         }}>
-        {open ? "✕" : "🤖"}
+        {open ? "✕" : "✦"}
       </button>
     </>
   );

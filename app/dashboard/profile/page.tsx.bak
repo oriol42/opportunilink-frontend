@@ -171,90 +171,84 @@ export default function ProfilePage() {
             {/* Colonne gauche */}
             <div style={{ display:"flex", flexDirection:"column", gap:16, position:"sticky", top:0 }}>
 
-              {/* Score card — thème clair cohérent */}
-              <div style={{ background:"#fff", borderRadius:20, border:"1px solid #e2e8f0",
-                overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.07)" }}>
+              {/* Score card */}
+              <div style={{ background:"linear-gradient(135deg,#0f172a,#1e293b)", borderRadius:20,
+                overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.2)" }}>
 
-                {/* Header avec gradient léger */}
-                <div style={{ background:`linear-gradient(135deg, ${scoreColor}12, ${scoreColor}06)`,
-                  borderBottom:`1px solid ${scoreColor}20`,
-                  padding:"22px 20px 18px", textAlign:"center" }}>
+                <div style={{ padding:"24px 20px 16px", textAlign:"center", position:"relative" }}>
+                  {/* Ring */}
                   {(()=>{
-                    const size=90; const r=37; const circ=2*Math.PI*r;
+                    const size=100; const r=42; const circ=2*Math.PI*r;
                     const dash=(score/100)*circ;
                     return (
                       <div style={{ position:"relative", display:"inline-block", marginBottom:10 }}>
                         <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
                           <circle cx={size/2} cy={size/2} r={r} fill="none"
-                            stroke="#f1f5f9" strokeWidth={6} />
+                            stroke="rgba(255,255,255,0.08)" strokeWidth={7} />
                           <circle cx={size/2} cy={size/2} r={r} fill="none"
-                            stroke={scoreColor} strokeWidth={6}
+                            stroke={scoreColor} strokeWidth={7}
                             strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
                             style={{ transition:"stroke-dasharray .8s ease" }} />
                         </svg>
                         <div style={{ position:"absolute", inset:0, display:"flex",
                           flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-                          <div style={{ width:48, height:48, borderRadius:"50%",
-                            background:`linear-gradient(135deg,${scoreColor},${scoreColor}bb)`,
+                          <div style={{ width:52, height:52, borderRadius:"50%",
+                            background:`linear-gradient(135deg,${scoreColor},${scoreColor}88)`,
                             display:"flex", alignItems:"center", justifyContent:"center",
-                            fontSize:16, fontWeight:900, color:"#fff",
-                            boxShadow:`0 3px 12px ${scoreColor}50` }}>
+                            fontSize:18, fontWeight:900, color:"#fff" }}>
                             {form.full_name?form.full_name.split(" ").map(n=>n[0]).slice(0,2).join("").toUpperCase():"?"}
                           </div>
                         </div>
                       </div>
                     );
                   })()}
-                  <p style={{ fontWeight:800, fontSize:14, color:"#111827", marginBottom:2 }}>
+                  <p style={{ fontWeight:800, fontSize:14, color:"#fff", marginBottom:2 }}>
                     {form.full_name||"Ton nom"}
                   </p>
-                  <p style={{ fontSize:11, color:"#6b7280", marginBottom:10 }}>
+                  <p style={{ fontSize:11, color:"#64748b", marginBottom:10 }}>
                     {form.level||"Niveau"} · {form.field||"Filière"}
                   </p>
                   <div style={{ display:"inline-flex", alignItems:"center", gap:6,
-                    background:`${scoreColor}15`, border:`1px solid ${scoreColor}30`,
+                    background:`${scoreColor}20`, border:`1px solid ${scoreColor}40`,
                     borderRadius:20, padding:"5px 14px" }}>
                     <div style={{ width:6, height:6, borderRadius:"50%", background:scoreColor }} />
                     <span style={{ fontSize:12, fontWeight:800, color:scoreColor }}>{score}/100</span>
-                    <span style={{ fontSize:11, color:"#6b7280" }}>· {scoreLabel}</span>
+                    <span style={{ fontSize:11, color:"#94a3b8" }}>· {scoreLabel}</span>
                   </div>
                 </div>
 
-                {/* Breakdown — barres uniquement, pas de chiffres x/20 */}
-                <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:8 }}>
+                {/* Breakdown — chiffres discrets */}
+                <div style={{ padding:"0 16px 16px", display:"flex", flexDirection:"column", gap:6 }}>
                   {breakdown.map(b=>(
                     <div key={b.label}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                        <span style={{ fontSize:11, color:"#6b7280", fontWeight:500 }}>{b.label}</span>
-                        {b.val===b.max
-                          ? <span style={{ fontSize:10, fontWeight:700, color:b.color }}>✓</span>
-                          : <span style={{ fontSize:10, fontWeight:600, color:b.val>0?"#94a3b8":"#cbd5e1" }}>
-                              {b.val>0 ? `${Math.round((b.val/b.max)*100)}%` : "—"}
-                            </span>
-                        }
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                        <span style={{ fontSize:11, color:"#94a3b8" }}>{b.label}</span>
+                        {/* Petits chiffres discrets, pas de gros nombre */}
+                        <span style={{ fontSize:10, fontWeight:700,
+                          color:b.val===b.max?b.color:"#475569" }}>
+                          {b.val===b.max?"✓":`${b.val}/${b.max}`}
+                        </span>
                       </div>
-                      <div style={{ height:4, background:"#f1f5f9", borderRadius:3, overflow:"hidden" }}>
+                      <div style={{ height:3, background:"rgba(255,255,255,0.06)", borderRadius:2, overflow:"hidden" }}>
                         <div style={{ height:"100%", width:`${(b.val/b.max)*100}%`,
-                          background:b.val>0?b.color:"transparent",
-                          borderRadius:3, transition:"width .5s ease" }} />
+                          background:b.color, borderRadius:2, transition:"width .5s" }} />
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Stats */}
+                {/* Stats — couleurs douces cohérentes avec le thème, plus de noir */}
                 {stats&&(
-                  <div style={{ borderTop:"1px solid #f1f5f9",
+                  <div style={{ borderTop:"1px solid rgba(255,255,255,0.06)",
                     display:"grid", gridTemplateColumns:"1fr 1fr" }}>
                     {[
-                      { val:stats.applications?.total??0, label:"Candidatures", color:"#3b82f6", bg:"#eff6ff" },
-                      { val:stats.saved_count??0, label:"Favoris", color:"#f59e0b", bg:"#fffbeb" },
+                      { val:stats.applications?.total??0, label:"Candidatures", color:"#60a5fa" },
+                      { val:stats.saved_count??0,          label:"Favoris",      color:"#fbbf24" },
                     ].map((s,i)=>(
                       <div key={s.label} style={{ padding:"12px 10px", textAlign:"center",
-                        borderRight:i===0?"1px solid #f1f5f9":"none",
-                        background:s.bg, cursor:"default" }}>
-                        <p style={{ fontWeight:900, fontSize:18, color:s.color, lineHeight:1 }}>{s.val}</p>
-                        <p style={{ fontSize:10, color:"#6b7280", marginTop:3, fontWeight:500 }}>{s.label}</p>
+                        borderRight:i===0?"1px solid rgba(255,255,255,0.06)":"none" }}>
+                        <p style={{ fontWeight:800, fontSize:16, color:s.color, lineHeight:1 }}>{s.val}</p>
+                        <p style={{ fontSize:10, color:"#64748b", marginTop:3 }}>{s.label}</p>
                       </div>
                     ))}
                   </div>

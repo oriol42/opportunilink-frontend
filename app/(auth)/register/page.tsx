@@ -2,6 +2,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import AuthShell from "@/components/auth/AuthShell";
+
+const inputWrap: React.CSSProperties = { position: "relative" };
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12,
+  border: "1px solid var(--border)", background: "var(--bg-input)",
+  color: "var(--text-primary)", fontSize: 14, outline: "none",
+  boxSizing: "border-box",
+};
+const iconLeft: React.CSSProperties = {
+  position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)",
+  color: "var(--text-muted)",
+};
+const label: React.CSSProperties = {
+  display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)",
+  marginBottom: 6,
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,7 +59,6 @@ export default function RegisterPage() {
       const loginData = await loginRes.json();
       if (!loginRes.ok) { router.push("/login"); return; }
       localStorage.setItem("access_token", loginData.access_token);
-      // → Onboarding au lieu du dashboard directement
       router.push("/onboarding");
     } catch {
       setError("Impossible de contacter le serveur.");
@@ -51,61 +68,82 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/8 rounded-full blur-3xl pointer-events-none" />
-      <div className="relative w-full max-w-sm">
-        <div className="text-center mb-8">
-          <Link href="/"><span className="font-black text-emerald-400 text-3xl">OpportuLink</span></Link>
-          <p className="text-gray-500 mt-2 text-sm">Ton avenir commence ici 🚀</p>
+    <AuthShell eyebrow="30 secondes" title="Créer mon compte" subtitle="Sans carte bancaire, accès immédiat.">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div>
+          <label style={label}>Nom complet</label>
+          <div style={inputWrap}>
+            <User size={16} style={iconLeft} />
+            <input
+              type="text" value={form.full_name} autoFocus
+              onChange={e => update("full_name", e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              style={inputStyle}
+              placeholder="Jean Dupont"
+            />
+          </div>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
-          <h2 className="text-xl font-bold text-white mb-1">Créer mon compte</h2>
-          <p className="text-gray-500 text-sm mb-6">Gratuit. 30 secondes.</p>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Nom complet</label>
-              <input type="text" value={form.full_name} autoFocus
-                onChange={e => update("full_name", e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
-                placeholder="Jean Dupont" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
-              <input type="email" value={form.email}
-                onChange={e => update("email", e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
-                placeholder="ton.email@exemple.com" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Mot de passe</label>
-              <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={form.password}
-                  onChange={e => update("password", e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-600 text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
-                  placeholder="8 caractères minimum" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-lg">
-                  {showPassword ? "🙈" : "👁️"}
-                </button>
-              </div>
-            </div>
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">{error}</div>
-            )}
-            <button onClick={handleSubmit} disabled={loading}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl transition text-sm shadow-lg shadow-emerald-500/20">
-              {loading ? "Création..." : "Créer mon compte →"}
+
+        <div>
+          <label style={label}>Email</label>
+          <div style={inputWrap}>
+            <Mail size={16} style={iconLeft} />
+            <input
+              type="email" value={form.email}
+              onChange={e => update("email", e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              style={inputStyle}
+              placeholder="ton.email@exemple.com"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label style={label}>Mot de passe</label>
+          <div style={inputWrap}>
+            <Lock size={16} style={iconLeft} />
+            <input
+              type={showPassword ? "text" : "password"} value={form.password}
+              onChange={e => update("password", e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              style={{ ...inputStyle, paddingRight: 40 }}
+              placeholder="8 caractères minimum"
+            />
+            <button
+              type="button" onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          <p className="text-center text-gray-600 text-sm mt-6">
-            Déjà un compte ?{" "}
-            <Link href="/login" className="text-emerald-400 font-semibold hover:text-emerald-300">Se connecter</Link>
-          </p>
         </div>
+
+        {error && (
+          <div style={{ background: "var(--bg-danger)", border: "1px solid var(--border-danger)", color: "var(--text-danger)", padding: "10px 14px", borderRadius: 10, fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleSubmit} disabled={loading}
+          style={{
+            width: "100%", padding: "13px", borderRadius: 12, border: "none",
+            background: loading ? "var(--accent-light)" : "var(--accent)",
+            color: "#fff", fontWeight: 600, fontSize: 14,
+            cursor: loading ? "not-allowed" : "pointer", marginTop: 4,
+          }}
+        >
+          {loading ? "Création..." : "Créer mon compte →"}
+        </button>
       </div>
-    </div>
+
+      <p style={{ textAlign: "center", fontSize: 13, color: "var(--text-muted)", marginTop: 24 }}>
+        Déjà un compte ?{" "}
+        <Link href="/login" style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none" }}>
+          Se connecter
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

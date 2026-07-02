@@ -2,15 +2,33 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { login } from "@/lib/auth";
 import { useStore } from "@/store/useStore";
+import AuthShell from "@/components/auth/AuthShell";
+
+const inputWrap: React.CSSProperties = { position: "relative" };
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12,
+  border: "1px solid var(--border)", background: "var(--bg-input)",
+  color: "var(--text-primary)", fontSize: 14, outline: "none",
+  boxSizing: "border-box",
+};
+const iconLeft: React.CSSProperties = {
+  position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)",
+  color: "var(--text-muted)",
+};
+const label: React.CSSProperties = {
+  display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)",
+  marginBottom: 6,
+};
 
 export default function LoginPage() {
   const router = useRouter();
   const { setUser } = useStore();
-  const [form, setForm]             = useState({ email: "", password: "" });
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit() {
@@ -29,89 +47,68 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-
-      {/* Halo */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2
-                      w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative w-full max-w-sm">
-
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/">
-            <span className="font-black text-emerald-400 text-3xl tracking-tight cursor-pointer">
-              OpportuLink
-            </span>
-          </Link>
-          <p className="text-gray-500 mt-2 text-sm">Content de te revoir 👋</p>
+    <AuthShell eyebrow="Bon retour" title="Connexion" subtitle="Accède à ton feed personnalisé.">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div>
+          <label style={label}>Email</label>
+          <div style={inputWrap}>
+            <Mail size={16} style={iconLeft} />
+            <input
+              type="email" value={form.email} autoFocus
+              onChange={e => setForm({ ...form, email: e.target.value })}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              style={inputStyle}
+              placeholder="ton.email@exemple.com"
+            />
+          </div>
         </div>
 
-        {/* Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
-          <h2 className="text-xl font-bold text-white mb-1">Connexion</h2>
-          <p className="text-gray-500 text-sm mb-6">Accède à ton feed personnalisé.</p>
-
-          <div className="space-y-4">
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                Email
-              </label>
-              <input type="email" value={form.email} autoFocus
-                onChange={e => setForm({ ...form, email: e.target.value })}
-                onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl
-                           text-white placeholder-gray-600 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-                placeholder="ton.email@exemple.com" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                Mot de passe
-              </label>
-              <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl
-                             text-white placeholder-gray-600 text-sm pr-12
-                             focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-                  placeholder="Ton mot de passe" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-lg transition">
-                  {showPassword ? "🙈" : "👁️"}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
-                {error}
-              </div>
-            )}
-
-            <button onClick={handleSubmit} disabled={loading}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50
-                         text-white font-bold py-3.5 rounded-xl transition-colors text-sm mt-2
-                         shadow-lg shadow-emerald-500/20">
-              {loading ? "Connexion en cours..." : "Se connecter →"}
+        <div>
+          <label style={label}>Mot de passe</label>
+          <div style={inputWrap}>
+            <Lock size={16} style={iconLeft} />
+            <input
+              type={showPassword ? "text" : "password"} value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              style={{ ...inputStyle, paddingRight: 40 }}
+              placeholder="Ton mot de passe"
+            />
+            <button
+              type="button" onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-
-          <p className="text-center text-gray-600 text-sm mt-6">
-            Pas encore de compte ?{" "}
-            <Link href="/register" className="text-emerald-400 font-semibold hover:text-emerald-300 transition">
-              S'inscrire gratuitement
-            </Link>
-          </p>
         </div>
 
-        <p className="text-center text-gray-700 text-xs mt-6">
-          Bourses · Stages · Emplois · Échanges
-        </p>
+        {error && (
+          <div style={{ background: "var(--bg-danger)", border: "1px solid var(--border-danger)", color: "var(--text-danger)", padding: "10px 14px", borderRadius: 10, fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleSubmit} disabled={loading}
+          style={{
+            width: "100%", padding: "13px", borderRadius: 12, border: "none",
+            background: loading ? "var(--accent-light)" : "var(--accent)",
+            color: "#fff", fontWeight: 600, fontSize: 14,
+            cursor: loading ? "not-allowed" : "pointer", marginTop: 4,
+          }}
+        >
+          {loading ? "Connexion en cours..." : "Se connecter →"}
+        </button>
       </div>
-    </div>
+
+      <p style={{ textAlign: "center", fontSize: 13, color: "var(--text-muted)", marginTop: 24 }}>
+        Pas encore de compte ?{" "}
+        <Link href="/register" style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none" }}>
+          S'inscrire
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

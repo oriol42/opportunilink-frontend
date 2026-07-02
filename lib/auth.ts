@@ -11,6 +11,7 @@ export interface User {
   skills_with_level: Record<string, number> | null;
   objectives: string[] | null;
   gpa: number | null;
+  age: number | null;
   phone: string | null;
   opportuni_score: number;
   is_premium: boolean;

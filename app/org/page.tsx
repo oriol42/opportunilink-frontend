@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 import Link from "next/link";
-import { Building2, Plus, BarChart3, Users, CheckCircle, XCircle, Clock, Send, Trash2, Eye, Globe, Calendar, Award, FileText, Sparkles, Shield, Zap, Edit2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Building2, Plus, BarChart3, Users, CheckCircle, XCircle, Clock, Send, Trash2, Eye, Globe, Calendar, Award, FileText, Sparkles, Shield, Zap, Edit2, ToggleLeft, ToggleRight, X, Trophy } from "lucide-react";
 
 interface OrgOpp { id: string; title: string; type: string; deadline: string|null; is_active: boolean; country: string|null; description: string; }
 interface Analytics { total_opportunities: number; active_opportunities: number; total_applications: number; applications_by_status: Record<string,number>; top_opportunity: string|null; }
@@ -86,7 +86,7 @@ export default function OrgDashboard() {
       <div style={{ position:"fixed", top:"30%", left:"50%", transform:"translate(-50%,-50%)", width:600, height:600, borderRadius:"50%", background:"radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)", pointerEvents:"none" }} />
       <div style={{ position:"relative", width:"100%", maxWidth:520 }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
-          <Link href="/"><span style={{ fontWeight:900, fontSize:26, color:"#4ade80" }}>Opportu<span style={{ color:"#fff" }}>Link</span></span></Link>
+          <Link href="/"><span style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:26, color:"#4ade80" }}>Opportu<span style={{ color:"#fff" }}>Link</span></span></Link>
           <p style={{ color:"#6b7280", fontSize:14, marginTop:8 }}>Portail Organisations · B2B</p>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:28 }}>
@@ -99,7 +99,7 @@ export default function OrgDashboard() {
           ))}
         </div>
         <div style={{ background:"#0a0f0a", border:"1px solid #1a2e1a", borderRadius:24, padding:32, boxShadow:"0 25px 50px rgba(0,0,0,0.5)" }}>
-          <h2 style={{ fontWeight:900, fontSize:22, color:"#fff", marginBottom:4 }}>Créer mon organisation</h2>
+          <h2 style={{ fontFamily:"var(--font-voice)", fontWeight:500, fontSize:22, color:"#fff", marginBottom:4 }}>Créer mon organisation</h2>
           <p style={{ fontSize:14, color:"#4b6b52", marginBottom:24 }}>Gratuit · Publie dans le feed de milliers d'étudiants</p>
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             <div><DLbl t="Nom *" /><input type="text" value={regForm.name} onChange={e=>setRegForm({...regForm,name:e.target.value})} style={DI} placeholder="MTN Cameroun, Université de Yaoundé I..." /></div>
@@ -150,10 +150,10 @@ export default function OrgDashboard() {
               { label:"Publiées", value:analytics.total_opportunities, Icon:FileText, color:"#0f172a", bg:"#fff", sub:`${analytics.active_opportunities} actives` },
               { label:"Candidatures", value:analytics.total_applications, Icon:Users, color:"#2563eb", bg:"#eff6ff", sub:`${analytics.applications_by_status?.submitted??0} soumises` },
               { label:"Acceptées", value:analytics.applications_by_status?.accepted??0, Icon:CheckCircle, color:"#16a34a", bg:"#f0fdf4", sub:analytics.total_applications>0?`${Math.round(((analytics.applications_by_status?.accepted??0)/analytics.total_applications)*100)}% taux`:"—" },
-              { label:"Top opportunité", value:"🏆", Icon:Award, color:"#d97706", bg:"#fffbeb", sub:analytics.top_opportunity?.substring(0,30)??"Aucune encore" },
+              { label:"Top opportunité", value:null, Icon:Trophy, color:"#d97706", bg:"#fffbeb", sub:analytics.top_opportunity?.substring(0,30)??"Aucune encore" },
             ].map(({label,value,Icon,color,bg,sub}) => (
               <div key={label} style={{ background:bg, border:"1px solid #f1f5f9", borderRadius:16, padding:"20px", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}><Icon size={18} color={color} /><span style={{ fontSize:26, fontWeight:900, color }}>{value}</span></div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}><Icon size={18} color={color} />{value!==null && <span style={{ fontFamily:"var(--font-voice)", fontSize:24, fontWeight:600, color }}>{value}</span>}</div>
                 <p style={{ fontSize:13, fontWeight:700, color:"#374151", marginBottom:2 }}>{label}</p>
                 <p style={{ fontSize:11, color:"#94a3b8" }}>{sub}</p>
               </div>
@@ -264,7 +264,7 @@ export default function OrgDashboard() {
           <div style={{ background:"#fff", borderRadius:24, padding:28, width:"100%", maxWidth:620, maxHeight:"90vh", overflowY:"auto", boxShadow:"0 25px 50px rgba(0,0,0,0.25)" }} onClick={e=>e.stopPropagation()}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
               <div><h3 style={{ fontWeight:900, fontSize:18, color:"#0f172a" }}>{editingOpp?"Modifier l'opportunité":"Publier une opportunité"}</h3><p style={{ fontSize:13, color:"#94a3b8", marginTop:2 }}>Visible dans le feed étudiant après publication</p></div>
-              <button onClick={()=>setShowModal(false)} style={{ width:32, height:32, borderRadius:"50%", background:"#f1f5f9", border:"none", cursor:"pointer", fontSize:16, color:"#64748b" }}>✕</button>
+              <button onClick={()=>setShowModal(false)} style={{ width:32, height:32, borderRadius:"50%", background:"#f1f5f9", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#64748b" }}><X size={16} /></button>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
               <div><Lbl t="Titre *"/><input type="text" value={oppForm.title} onChange={e=>setOppForm({...oppForm,title:e.target.value})} style={SI} placeholder="Stage Développeur Python — 6 mois"/></div>

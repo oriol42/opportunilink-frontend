@@ -1,5 +1,6 @@
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
+import MobileNav from "@/components/MobileNav";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,10 +8,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <Topbar />
-        <main style={{ flex: 1, overflowY: "auto" }}>
+        <main className="dashboard-main-scroll" style={{ flex: 1, overflowY: "auto" }}>
           {children}
         </main>
       </div>
+      <MobileNav />
     </div>
   );
 }

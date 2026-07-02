@@ -1,4 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import "@fontsource/dm-sans/400.css";
+import "@fontsource/dm-sans/500.css";
+import "@fontsource/dm-sans/700.css";
+import "@fontsource/fraunces/400.css";
+import "@fontsource/fraunces/500.css";
+import "@fontsource/fraunces/600.css";
+import "@fontsource/fraunces/500-italic.css";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { SessionInitializer } from "@/components/SessionInitializer";
@@ -27,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
         )}
       </head>
-      <body style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif", margin: 0 }}>
+      <body style={{ fontFamily: "var(--font-sans)", margin: 0 }}>
         <Providers>
           <SessionInitializer />
           <ServiceWorkerRegistrar />

@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   User, GraduationCap, Target, Languages as LanguagesIcon, Zap, Check, X,
   TriangleAlert, Smartphone, ThumbsUp, Rocket, Sparkles, Globe, BookOpen,
-  Lightbulb, LoaderCircle, Award, Save, Plus, LucideIcon,
+  Lightbulb, LoaderCircle, Award, Save, Plus, Lock, Eye, EyeOff, LucideIcon,
 } from "lucide-react";
 
 const LEVELS = ["Licence","Master","Doctorat","BTS","DUT","Ingénieur","Technicien Supérieur"];
@@ -96,6 +96,7 @@ const SECTIONS: { key:string; label:string; icon:LucideIcon }[] = [
   { key:"objectives", label:"Objectifs",   icon:Target },
   { key:"languages",  label:"Langues",     icon:LanguagesIcon },
   { key:"skills",     label:"Compétences", icon:Zap },
+  { key:"security",   label:"Sécurité",    icon:Lock },
 ];
 type SectionKey = typeof SECTIONS[number]["key"];
 
@@ -610,10 +611,76 @@ function ProfileInner() {
                   )}
                 </div>
               )}
+
+              {section==="security"&&<SecuritySection />}
             </div>
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function SecuritySection() {
+  const { success, error: toastError } = useToast();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (next.length < 8) { toastError("Le nouveau mot de passe doit faire 8 caractères minimum."); return; }
+    if (next !== confirm) { toastError("Les mots de passe ne correspondent pas."); return; }
+    setLoading(true);
+    try {
+      await api.post("/auth/change-password", { current_password: current, new_password: next });
+      success("Mot de passe modifié avec succès !");
+      setCurrent(""); setNext(""); setConfirm("");
+    } catch (err: unknown) {
+      toastError((err as {response?:{data?:{detail?:string}}})?.response?.data?.detail ?? "Erreur — vérifie ton mot de passe actuel.");
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
+      padding:28, boxShadow:"var(--shadow-sm)" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
+        <div style={{ width:40, height:40, borderRadius:12, background:"var(--bg-danger)",
+          display:"flex", alignItems:"center", justifyContent:"center" }}><Lock size={19} color="var(--text-danger)" /></div>
+        <div>
+          <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>Sécurité du compte</p>
+          <p style={{ fontSize:12, color:"var(--text-muted)" }}>Change ton mot de passe régulièrement</p>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16, maxWidth:420 }}>
+        <div>
+          <label style={labelStyle}>Mot de passe actuel</label>
+          <input type={show?"text":"password"} value={current} onChange={e=>setCurrent(e.target.value)}
+            style={inputStyle} placeholder="Ton mot de passe actuel" required />
+        </div>
+        <div>
+          <label style={labelStyle}>Nouveau mot de passe</label>
+          <input type={show?"text":"password"} value={next} onChange={e=>setNext(e.target.value)}
+            style={inputStyle} placeholder="8 caractères minimum" required />
+        </div>
+        <div>
+          <label style={labelStyle}>Confirmer le nouveau mot de passe</label>
+          <input type={show?"text":"password"} value={confirm} onChange={e=>setConfirm(e.target.value)}
+            style={inputStyle} placeholder="Retape le nouveau mot de passe" required />
+        </div>
+        <button type="button" onClick={()=>setShow(s=>!s)} style={{ display:"flex", alignItems:"center", gap:6,
+          background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:12,
+          fontWeight:600, width:"fit-content" }}>
+          {show ? <EyeOff size={13} /> : <Eye size={13} />} {show ? "Masquer" : "Afficher"} les mots de passe
+        </button>
+        <button type="submit" disabled={loading} style={{ padding:"13px", borderRadius:12, border:"none",
+          background:loading?"var(--border)":"var(--text-danger)", color:loading?"var(--text-muted)":"#fff",
+          fontWeight:700, fontSize:14, cursor:loading?"not-allowed":"pointer", marginTop:4 }}>
+          {loading ? "Modification..." : "Changer le mot de passe"}
+        </button>
+      </form>
     </div>
   );
 }

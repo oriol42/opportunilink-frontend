@@ -7,10 +7,11 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import {
   Bot, X, Send, Search, FileText, CircleCheck, Bookmark, User,
-  Sparkles, Flame, CalendarClock, FolderOpen, ArrowRight, LoaderCircle, LucideIcon,
+  Sparkles, Flame, CalendarClock, ArrowRight, LoaderCircle, LucideIcon,
 } from "lucide-react";
 import CoachingCard from "@/components/dashboard/CoachingCard";
 import OpportunityCard from "@/components/opportunity/OpportunityCard";
+import OpportunityListRow from "@/components/opportunity/OpportunityListRow";
 import TopMatchCard from "@/components/opportunity/TopMatchCard";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -409,8 +410,9 @@ function DashboardInner() {
                   {rest.length > 0 && (
                     <section>
                       <SH icon={LayoutGridIcon} title="Explorer toutes les opportunités" count={sorted.length} />
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:16, marginBottom:16 }}>
-                        {rest.map(opp => <OpportunityCard key={opp.id} opp={opp} user={userCtx} />)}
+                      <div style={{ background:"var(--bg-card)", borderRadius:14, border:"1px solid var(--border)",
+                        overflow:"hidden", marginBottom:16 }}>
+                        {rest.map(opp => <OpportunityListRow key={opp.id} opp={opp} />)}
                       </div>
                       {!showMore && sorted.length > 14 && (
                         <div style={{ textAlign:"center" }}>
@@ -516,27 +518,6 @@ function DashboardInner() {
             </div>
           )}
 
-          {stats && (
-            <div style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)",
-              boxShadow:"var(--shadow-sm)", padding:"15px" }}>
-              <p style={{ fontWeight:600, fontSize:13, color:"var(--text-primary)", marginBottom:11 }}>Ton activité</p>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                {[
-                  { val:stats.applications.total,    label:"Candidatures", color:"#3b82f6", icon:FileText },
-                  { val:stats.applications.accepted, label:"Acceptées",   color:"var(--accent)", icon:CircleCheck },
-                  { val:stats.saved_count,           label:"Favoris",     color:"var(--text-warning)", icon:Bookmark },
-                  { val:stats.documents_count,       label:"Documents",   color:"#8b5cf6", icon:FolderOpen },
-                ].map(s => (
-                  <div key={s.label} style={{ background:"var(--bg-surface-2)", borderRadius:11, padding:"12px",
-                    display:"flex", flexDirection:"column", gap:5, border:"1px solid var(--border-subtle)" }}>
-                    <s.icon size={16} color={s.color} />
-                    <p style={{ fontFamily: "var(--font-voice)", fontWeight:600, fontSize:19, color:s.color, lineHeight:1 }}>{s.val}</p>
-                    <p style={{ fontSize:10, color:"var(--text-muted)", fontWeight:600 }}>{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </aside>
       </div>
 

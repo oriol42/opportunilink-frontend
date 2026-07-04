@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <Topbar />
-        <main className="dashboard-main-scroll" style={{ flex: 1, overflowY: "auto" }}>
+        <main className="dashboard-main-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", minWidth: 0 }}>
           {children}
         </main>
       </div>

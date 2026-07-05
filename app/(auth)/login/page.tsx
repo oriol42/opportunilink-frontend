@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, LoaderCircle } from "lucide-react";
 import { login } from "@/lib/auth";
 import { useStore } from "@/store/useStore";
 import AuthShell from "@/components/auth/AuthShell";
@@ -47,7 +47,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell eyebrow="Bon retour" title="Connexion" subtitle="Accède à ton feed personnalisé.">
+    <AuthShell eyebrow="Bon retour" title="Connexion" subtitle="Accède à ton tableau de bord personnalisé.">
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <label style={label}>Email</label>
@@ -97,9 +97,11 @@ export default function LoginPage() {
             background: loading ? "var(--accent-light)" : "var(--accent)",
             color: "#fff", fontWeight: 600, fontSize: 14,
             cursor: loading ? "not-allowed" : "pointer", marginTop: 4,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            transition: "background .15s, transform .1s",
           }}
         >
-          {loading ? "Connexion en cours..." : "Se connecter →"}
+          {loading ? <><LoaderCircle size={16} className="spin" /> Connexion...</> : "Se connecter →"}
         </button>
       </div>
 

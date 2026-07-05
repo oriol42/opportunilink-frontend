@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { LayoutGrid, FileText, Bookmark, MessageCircle, User } from "lucide-react";
 
 const NAV = [
-  { href: "/dashboard",              icon: LayoutGrid,    label: "Feed"     },
+  { href: "/dashboard",              icon: LayoutGrid,    label: "Dashboard" },
   { href: "/dashboard/applications", icon: FileText,      label: "Suivi"    },
   { href: "/dashboard/saved",        icon: Bookmark,      label: "Favoris"  },
-  { href: "/dashboard/coach",        icon: MessageCircle, label: "Coach"    },
+  { href: "/dashboard/coach",        icon: MessageCircle, label: "Link IA"  },
   { href: "/dashboard/profile",      icon: User,          label: "Profil"   },
 ];
 

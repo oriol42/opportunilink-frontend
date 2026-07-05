@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@/store/useStore";
 import { api } from "@/lib/api";
 import Link from "next/link";
-import { Globe, X, LoaderCircle } from "lucide-react";
+import { Globe, X, LoaderCircle, RefreshCw } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import { typeConfig, daysLeft } from "@/lib/opportunityHelpers";
 
@@ -22,10 +22,13 @@ function SavedInner() {
 
   useEffect(() => { if (!isAuthLoading && !user) router.push("/login"); }, [isAuthLoading, user, router]);
 
-  const { data, isLoading, isError } = useQuery<SavedOpp[]>({
+  const { data, isLoading, isError, isFetching } = useQuery<SavedOpp[]>({
     queryKey: ["saved"],
     queryFn: async () => (await api.get("/opportunities/saved")).data,
     enabled: !!user,
+    refetchInterval: 60000,        // actualisation auto toutes les 60 s
+    refetchOnWindowFocus: true,    // et au retour sur l'onglet
+    staleTime: 30000,
   });
 
   async function handleUnsave(id: string) {
@@ -36,10 +39,15 @@ function SavedInner() {
   if (isAuthLoading || !user) return null;
 
   return (
-    <div style={{ padding:"0", height:"100%", display:"flex", flexDirection:"column" }}>
+    <div className="animate-fade-in" style={{ padding:"0", height:"100%", display:"flex", flexDirection:"column" }}>
       <div style={{ padding:"20px 24px 16px", borderBottom:"1px solid var(--border-subtle)", background:"var(--bg-card)", flexShrink:0 }}>
         <h1 style={{ fontFamily:"var(--font-voice)", fontWeight:500, fontSize:22, color:"var(--text-primary)", marginBottom:4 }}>Mes favoris</h1>
-        <p style={{ fontSize:13, color:"var(--text-muted)" }}>{data ? `${data.length} opportunité${data.length!==1?"s":""} sauvegardée${data.length!==1?"s":""}` : ""}</p>
+        <p style={{ fontSize:13, color:"var(--text-muted)", display:"flex", alignItems:"center", gap:7 }}>
+          {data ? `${data.length} opportunité${data.length!==1?"s":""} sauvegardée${data.length!==1?"s":""}` : ""}
+          <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text-muted)", opacity:.85 }}>
+            <RefreshCw size={11} className={isFetching ? "spin" : undefined} /> {isFetching ? "Actualisation…" : "Actualisé en continu"}
+          </span>
+        </p>
       </div>
       <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
         {isLoading && <div style={{ display:"flex", flexDirection:"column", gap:12 }}>{[1,2,3].map(i=><div key={i} style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)", padding:20, height:100 }} className="animate-pulse" />)}</div>}

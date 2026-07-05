@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useStore } from "@/store/useStore";
+import { useToast } from "@/components/ui/Toast";
 import {
   Sparkles, Printer, Copy, Check, GraduationCap, Zap, Heart,
-  Languages as LangIcon, Mail, Phone, MapPin, Lightbulb, LoaderCircle,
+  Languages as LangIcon, Mail, Phone, MapPin, Lightbulb, LoaderCircle, FolderOpen,
 } from "lucide-react";
 
 interface FormationItem { periode: string; titre: string; etablissement: string; }
@@ -25,13 +26,16 @@ type BuilderState = "idle" | "loading" | "done" | "error";
 
 export default function CVBuilder({ oppId }: { oppId: string }) {
   const { user } = useStore();
+  const { success, error: toastError } = useToast();
   const [state, setState] = useState<BuilderState>("idle");
   const [cv, setCv] = useState<CVData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleGenerate() {
     setState("loading");
-    setCv(null);
+    setCv(null); setSaved(false);
     try {
       const res = await api.post<CVData>("/ai/generate-cv", { opportunity_id: oppId });
       setCv(res.data);
@@ -39,6 +43,16 @@ export default function CVBuilder({ oppId }: { oppId: string }) {
     } catch {
       setState("error");
     }
+  }
+
+  async function saveToVault() {
+    if (!cv) return;
+    setSaving(true);
+    try {
+      await api.post("/documents/save-generated", { kind: "cv", title: `CV - ${cv.opportunity_title}`, cv });
+      setSaved(true); success("CV enregistré dans ton coffre-fort !");
+    } catch { toastError("Impossible d'enregistrer. Réessaie."); }
+    finally { setSaving(false); }
   }
 
   async function handleCopy() {
@@ -116,6 +130,11 @@ export default function CVBuilder({ oppId }: { oppId: string }) {
             borderBottom: "1px solid var(--border-subtle)" }} className="no-print">
             <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>CV prêt</span>
             <div style={{ display: "flex", gap: 14 }}>
+              <button onClick={saveToVault} disabled={saving || saved} style={{ fontSize: 11, fontWeight: 700,
+                color: saved ? "var(--text-success)" : "#0d9488", background: "none", border: "none",
+                cursor: saving ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                {saved ? <><Check size={12} />Enregistré</> : <><FolderOpen size={12} />{saving ? "Enregistrement…" : "Coffre-fort"}</>}
+              </button>
               <button onClick={handleCopy} style={{ fontSize: 11, fontWeight: 700, color: "#0d9488",
                 background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                 {copied ? <><Check size={12} />Copié</> : <><Copy size={12} />Copier</>}
@@ -128,7 +147,7 @@ export default function CVBuilder({ oppId }: { oppId: string }) {
           </div>
 
           <div id="cv-print-area" style={{ padding: "24px 22px", background: "#fff" }}>
-            <div style={{ borderBottom: "3px solid #0d9488", paddingBottom: 14, marginBottom: 16 }}>
+            <div style={{ borderBottom: "2px solid #0f172a", paddingBottom: 14, marginBottom: 16 }}>
               <h2 style={{ fontFamily: "var(--font-voice)", fontWeight: 600, fontSize: 22, color: "#0f172a", marginBottom: 4 }}>
                 {user?.full_name ?? "Ton nom"}
               </h2>
@@ -145,7 +164,7 @@ export default function CVBuilder({ oppId }: { oppId: string }) {
             </section>
 
             <section style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#0d9488", textTransform: "uppercase",
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#334155", textTransform: "uppercase",
                 letterSpacing: ".06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
                 <GraduationCap size={13} /> Formation
               </p>
@@ -161,20 +180,20 @@ export default function CVBuilder({ oppId }: { oppId: string }) {
             </section>
 
             <section style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#0d9488", textTransform: "uppercase",
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#334155", textTransform: "uppercase",
                 letterSpacing: ".06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
                 <Zap size={13} /> Compétences techniques
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {cv.competences_techniques.map((c, i) => (
-                  <span key={i} style={{ fontSize: 11, fontWeight: 600, color: "#0f766e",
-                    background: "#f0fdfa", padding: "3px 10px", borderRadius: 20, border: "1px solid #ccfbf1" }}>{c}</span>
+                  <span key={i} style={{ fontSize: 11, fontWeight: 600, color: "#334155",
+                    background: "#f8fafc", padding: "3px 10px", borderRadius: 20, border: "1px solid #e2e8f0" }}>{c}</span>
                 ))}
               </div>
             </section>
 
             <section style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#0d9488", textTransform: "uppercase",
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#334155", textTransform: "uppercase",
                 letterSpacing: ".06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
                 <Heart size={13} /> Compétences transversales
               </p>
@@ -187,7 +206,7 @@ export default function CVBuilder({ oppId }: { oppId: string }) {
             </section>
 
             <section style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#0d9488", textTransform: "uppercase",
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#334155", textTransform: "uppercase",
                 letterSpacing: ".06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
                 <LangIcon size={13} /> Langues
               </p>
@@ -201,7 +220,7 @@ export default function CVBuilder({ oppId }: { oppId: string }) {
             </section>
 
             <section>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#0d9488", textTransform: "uppercase",
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#334155", textTransform: "uppercase",
                 letterSpacing: ".06em", marginBottom: 8 }}>Points forts pour cette opportunité</p>
               <ul style={{ margin: 0, paddingLeft: 18 }}>
                 {cv.points_forts.map((p, i) => (

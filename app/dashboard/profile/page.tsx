@@ -78,12 +78,24 @@ function computeEmployabilityScore(form: {
   gpa:string; age:string; phone:string; languages:string[]; skills:Record<string,number>;
   objectives:string[];
 }): { score:number; missing:string[] } {
+  // Pondération cohérente : chaque champ listé dans « missing » compte dans le
+  // score, et le total atteint 100 dès que tout est rempli raisonnablement
+  // (2 langues et 3 compétences suffisent pour les catégories progressives).
+  const langCount  = form.languages.length;
+  const skillCount = Object.keys(form.skills).length;
   const parts = [
-    form.level ? 20:0, form.field ? 15:0, Math.min(form.languages.length*8,20),
-    Math.min(Object.keys(form.skills).length*3,20), form.gpa?10:0,
-    (form.full_name?3:0)+(form.city?3:0)+(form.phone?4:0), form.objectives.length>0?5:0,
+    form.full_name ? 8 : 0,
+    form.level     ? 15 : 0,
+    form.field     ? 15 : 0,
+    form.city      ? 7 : 0,
+    form.gpa       ? 10 : 0,
+    form.age       ? 5 : 0,
+    form.phone     ? 5 : 0,
+    Math.min(langCount * 8, 15),   // ≥ 2 langues → 15
+    Math.min(skillCount * 5, 15),  // ≥ 3 compétences → 15
+    form.objectives.length > 0 ? 5 : 0,
   ];
-  const score = parts.reduce((a,b)=>a+b,0);
+  const score = Math.min(parts.reduce((a,b)=>a+b,0), 100);
   const missing = [
     !form.full_name && "Nom complet", !form.level && "Niveau d'études", !form.field && "Filière",
     !form.age && "Âge", !form.gpa && "Moyenne", !form.city && "Ville", !form.phone && "Téléphone",

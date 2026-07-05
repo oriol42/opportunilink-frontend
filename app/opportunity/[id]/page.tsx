@@ -14,6 +14,7 @@ import {
   ArrowLeft, ShieldCheck, Flame, Globe, CalendarClock, FileText, Mail,
   GraduationCap, Link2, X, PartyPopper, ListChecks, Percent, Clock,
   SearchX, ExternalLink, Copy, Check, LucideIcon, Languages as LanguagesIcon,
+  LoaderCircle, MessageSquareText, FolderOpen, ChevronRight,
 } from "lucide-react";
 import { typeConfig, daysLeft, reliabilityMeta } from "@/lib/opportunityHelpers";
 
@@ -24,7 +25,15 @@ interface Opp {
   required_languages: string[]; min_gpa: number | null;
   reliability_score: number; is_verified: boolean;
 }
-interface PrepScore { score: number; missing: { label: string; fix: string }[]; message: string }
+interface PrepCheck { label: string; ok: boolean; fix: string; category: string }
+interface PrepScore { score: number; missing: PrepCheck[]; message: string; ok_count: number; total_checks: number }
+
+function prepAction(category: string): { label: string; href: string } | null {
+  if (category === "document") return { label: "Coffre-fort", href: "/dashboard/documents" };
+  if (category === "profile" || category === "academic" || category === "skills")
+    return { label: "Mon profil", href: "/dashboard/profile" };
+  return null;
+}
 interface LetterResp { letter: string; opportunity_title: string; word_count: number }
 
 const LANGS: Record<string, string> = {
@@ -114,6 +123,73 @@ function detectMethod(sourceUrl: string, description: string): AppMethod {
   };
 }
 
+function DescriptionSection({ description }: { description: string }) {
+  const { error: toastError } = useToast();
+  const [lang, setLang] = useState<"orig" | "fr" | "en">("orig");
+  const [translated, setTranslated] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  const text = lang === "orig" ? description : (translated[lang] ?? description);
+  const paras = text.split(/\n+/).filter(p => p.trim());
+
+  async function translate(target: "fr" | "en") {
+    if (translated[target]) { setLang(target); return; }
+    setLoading(true);
+    try {
+      const res = await api.post("/ai/translate", { text: description, target_lang: target });
+      setTranslated(prev => ({ ...prev, [target]: res.data.translated }));
+      setLang(target);
+    } catch { toastError("Traduction indisponible pour le moment. Réessaie."); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div style={{ background:"var(--bg-card)", borderRadius:18, border:"1px solid var(--border)",
+      padding:24, boxShadow:"var(--shadow-sm)" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12,
+        marginBottom:16, flexWrap:"wrap" }}>
+        <p style={{ fontWeight:700, fontSize:15, color:"var(--text-primary)",
+          display:"flex", alignItems:"center", gap:7 }}>
+          <FileText size={16} color="var(--text-secondary)" /> À propos de cette opportunité
+        </p>
+        <div style={{ display:"flex", alignItems:"center", gap:2, background:"var(--bg-surface-2)",
+          borderRadius:10, padding:3, border:"1px solid var(--border-subtle)" }}>
+          <LanguagesIcon size={13} color="var(--text-muted)" style={{ marginLeft:5, marginRight:2 }} />
+          {([["orig","Original"],["fr","FR"],["en","EN"]] as const).map(([key, label]) => {
+            const active = lang === key;
+            return (
+              <button key={key} disabled={loading}
+                onClick={() => key === "orig" ? setLang("orig") : translate(key)}
+                title={key === "fr" ? "Traduire en français" : key === "en" ? "Translate to English" : "Texte original"}
+                style={{ fontSize:11.5, fontWeight:700, padding:"5px 10px", borderRadius:8, border:"none",
+                  cursor: loading ? "wait" : "pointer",
+                  background: active ? "var(--text-primary)" : "transparent",
+                  color: active ? "var(--bg-card)" : "var(--text-muted)", transition:"all .15s" }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {loading ? (
+        <div style={{ display:"flex", alignItems:"center", gap:8, color:"var(--text-muted)",
+          fontSize:13, padding:"6px 0" }}>
+          <LoaderCircle size={15} className="spin" /> Traduction en cours…
+        </div>
+      ) : paras.length > 0 ? (
+        paras.map((para, i) => (
+          <p key={i} style={{ fontSize:14, color:"var(--text-secondary)", lineHeight:1.85,
+            marginBottom:12, textAlign:"justify", hyphens:"auto", WebkitHyphens:"auto" }}>
+            {para.trim()}
+          </p>
+        ))
+      ) : (
+        <p style={{ fontSize:14, color:"var(--text-secondary)", lineHeight:1.85, textAlign:"justify" }}>{text}</p>
+      )}
+    </div>
+  );
+}
+
 function MethodCard({ opp }: { opp: Opp }) {
   const m = detectMethod(opp.source_url, opp.description);
   function handleCTA() {
@@ -124,7 +200,7 @@ function MethodCard({ opp }: { opp: Opp }) {
     }
   }
   return (
-    <div style={{ background:"var(--bg-card)", border:`1.5px solid ${m.border}`, borderLeft:`3px solid ${m.color}`, borderRadius:18, overflow:"hidden" }}>
+    <div style={{ background:"var(--bg-card)", border:`1.5px solid ${m.border}`, borderRadius:18, overflow:"hidden" }}>
       <div style={{ padding:"16px 20px 12px", display:"flex", alignItems:"center", gap:12 }}>
         <div style={{ width:44, height:44, borderRadius:12, background:m.bg,
           display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -161,38 +237,60 @@ function MethodCard({ opp }: { opp: Opp }) {
 }
 
 function PrepSection({ oppId }: { oppId: string }) {
+  const router = useRouter();
   const { data, isLoading } = useQuery<PrepScore>({
     queryKey: ["prep", oppId],
     queryFn: async () => (await api.get(`/opportunities/${oppId}/prep-score`)).data,
   });
   if (isLoading) return <div style={{ height:120, background:"var(--bg-surface-2)", borderRadius:16 }} className="animate-pulse" />;
   if (!data) return null;
-  const theme = data.score>=70 ? { bg:"var(--bg-success)", border:"var(--border-success)", text:"var(--text-success)" }
-    : data.score>=40 ? { bg:"var(--bg-warning)", border:"var(--border-warning)", text:"var(--text-warning)" }
-    : { bg:"var(--bg-danger)", border:"var(--border-danger)", text:"var(--text-danger)" };
+  const theme = data.score>=70 ? { bg:"var(--bg-success)", border:"var(--border-success)", text:"var(--text-success)", bar:"var(--accent)" }
+    : data.score>=40 ? { bg:"var(--bg-warning)", border:"var(--border-warning)", text:"var(--text-warning)", bar:"var(--text-warning)" }
+    : { bg:"var(--bg-danger)", border:"var(--border-danger)", text:"var(--text-danger)", bar:"var(--text-danger)" };
+  const okCount = data.ok_count ?? 0;
+  const total = data.total_checks ?? (data.missing?.length ?? 0);
   return (
     <div style={{ background:theme.bg, border:`1.5px solid ${theme.border}`, borderRadius:18, padding:20 }}>
-      <p style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)", marginBottom:16 }}>Score de préparation</p>
-      <div style={{ display:"flex", gap:16, alignItems:"center", marginBottom:16 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+        <p style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)" }}>Score de préparation</p>
+        {total > 0 && (
+          <span style={{ fontSize:11, fontWeight:700, color:theme.text }}>{okCount}/{total} critères</span>
+        )}
+      </div>
+      <div style={{ display:"flex", gap:16, alignItems:"center", marginBottom:14 }}>
         <ScoreRing score={data.score} size={72} strokeWidth={5} />
         <div style={{ flex:1 }}>
           <p style={{ fontSize:13, color:"var(--text-secondary)", lineHeight:1.55 }}>{data.message}</p>
         </div>
       </div>
-      {data.missing.map((m,i) => (
-        <div key={i} style={{ display:"flex", gap:10, background:"var(--bg-card)",
-          borderRadius:10, padding:"8px 12px", marginBottom:6,
-          border:"1px solid var(--border-subtle)" }}>
-          <div style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, background:theme.bg,
-            display:"flex", alignItems:"center", justifyContent:"center", marginTop:1 }}>
-            <X size={12} color={theme.text} strokeWidth={3} />
+      {/* Barre de progression */}
+      <div style={{ background:"var(--bg-card)", height:7, borderRadius:4, overflow:"hidden", marginBottom:16 }}>
+        <div style={{ height:"100%", borderRadius:4, width:`${data.score}%`, background:theme.bar, transition:"width .5s" }} />
+      </div>
+      {data.missing.map((m,i) => {
+        const action = prepAction(m.category);
+        return (
+          <div key={i} onClick={action ? () => router.push(action.href) : undefined}
+            style={{ display:"flex", gap:10, alignItems:"center", background:"var(--bg-card)",
+              borderRadius:10, padding:"9px 12px", marginBottom:6, border:"1px solid var(--border-subtle)",
+              cursor: action ? "pointer" : "default" }}>
+            <div style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, background:theme.bg,
+              display:"flex", alignItems:"center", justifyContent:"center", marginTop:1 }}>
+              <X size={12} color={theme.text} strokeWidth={3} />
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ fontSize:12, fontWeight:700, color:theme.text }}>{m.label}</p>
+              <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:2 }}>{m.fix}</p>
+            </div>
+            {action && (
+              <span style={{ display:"flex", alignItems:"center", gap:2, flexShrink:0, fontSize:11,
+                fontWeight:700, color:theme.text }}>
+                {action.label} <ChevronRight size={13} />
+              </span>
+            )}
           </div>
-          <div>
-            <p style={{ fontSize:12, fontWeight:700, color:theme.text }}>{m.label}</p>
-            <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:2 }}>{m.fix}</p>
-          </div>
-        </div>
-      ))}
+        );
+      })}
       {data.missing.length===0 && (
         <div style={{ background:"var(--bg-card)", borderRadius:10, padding:"8px 12px",
           display:"flex", gap:10, alignItems:"center" }}>
@@ -242,14 +340,16 @@ function ApplySection({ oppId }: { oppId: string }) {
   );
 }
 
-function LetterSection({ oppId }: { oppId: string }) {
-  const { error: toastError } = useToast();
+function LetterSection({ oppId, title }: { oppId: string; title: string }) {
+  const { error: toastError, success } = useToast();
   const [state, setState] = useState<"idle"|"loading"|"done">("idle");
   const [letter, setLetter] = useState("");
   const [words, setWords] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   async function generate() {
-    setState("loading");
+    setState("loading"); setSaved(false);
     try {
       const res = await api.post<LetterResp>("/ai/generate-letter",{ opportunity_id:oppId });
       setLetter(res.data.letter); setWords(res.data.word_count); setState("done");
@@ -258,6 +358,14 @@ function LetterSection({ oppId }: { oppId: string }) {
   async function copy() {
     await navigator.clipboard.writeText(letter);
     setCopied(true); setTimeout(()=>setCopied(false),2000);
+  }
+  async function saveToVault() {
+    setSaving(true);
+    try {
+      await api.post("/documents/save-generated", { kind:"lettre", title:`Lettre - ${title}`, body:letter });
+      setSaved(true); success("Lettre enregistrée dans ton coffre-fort !");
+    } catch { toastError("Impossible d'enregistrer. Réessaie."); }
+    finally { setSaving(false); }
   }
   return (
     <div style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)", overflow:"hidden" }}>
@@ -282,10 +390,17 @@ function LetterSection({ oppId }: { oppId: string }) {
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
             padding:"10px 20px", background:"var(--bg-surface-2)", borderBottom:"1px solid var(--border-subtle)" }}>
             <span style={{ fontSize:11, color:"var(--text-muted)" }}>{words} mots</span>
-            <button onClick={copy} style={{ fontSize:11, fontWeight:700, color:"#7c3aed",
-              background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-              {copied ? <><Check size={12} />Copié !</> : <><Copy size={12} />Copier</>}
-            </button>
+            <div style={{ display:"flex", gap:14, alignItems:"center" }}>
+              <button onClick={saveToVault} disabled={saving||saved} style={{ fontSize:11, fontWeight:700,
+                color:saved?"var(--text-success)":"#7c3aed", background:"none", border:"none",
+                cursor:saving?"wait":"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                {saved ? <><Check size={12} />Enregistré</> : <><FolderOpen size={12} />{saving?"Enregistrement…":"Coffre-fort"}</>}
+              </button>
+              <button onClick={copy} style={{ fontSize:11, fontWeight:700, color:"#7c3aed",
+                background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                {copied ? <><Check size={12} />Copié !</> : <><Copy size={12} />Copier</>}
+              </button>
+            </div>
           </div>
           <div style={{ padding:"16px 20px", maxHeight:300, overflowY:"auto" }}>
             <p style={{ fontSize:13, color:"var(--text-secondary)", lineHeight:1.7, whiteSpace:"pre-wrap" }}>{letter}</p>
@@ -334,7 +449,7 @@ export default function OpportunityDetailPage() {
   ];
 
   return (
-    <div style={{ height:"100%", overflowY:"auto", background:"var(--bg-base)" }}>
+    <div className="animate-fade-in" style={{ height:"100%", overflowY:"auto", background:"var(--bg-base)" }}>
 
       <div style={{ background:`linear-gradient(135deg,${cfg.gradient})`, padding:"20px 24px 32px",
         position:"relative", overflow:"hidden" }}>
@@ -400,21 +515,7 @@ export default function OpportunityDetailPage() {
 
           <MethodCard opp={opp} />
 
-          <div style={{ background:"var(--bg-card)", borderRadius:18, border:"1px solid var(--border)",
-            padding:24, boxShadow:"var(--shadow-sm)" }}>
-            <p style={{ fontWeight:700, fontSize:15, color:"var(--text-primary)", marginBottom:16,
-              display:"flex", alignItems:"center", gap:7 }}>
-              <FileText size={16} color="var(--text-secondary)" /> À propos de cette opportunité
-            </p>
-            {opp.description.split(/\n+/).filter(p => p.trim()).map((para, i) => (
-              <p key={i} style={{ fontSize:14, color:"var(--text-secondary)", lineHeight:1.85, marginBottom:12 }}>
-                {para.trim()}
-              </p>
-            ))}
-            {!opp.description.includes("\n") && (
-              <p style={{ fontSize:14, color:"var(--text-secondary)", lineHeight:1.85 }}>{opp.description}</p>
-            )}
-          </div>
+          <DescriptionSection description={opp.description} />
 
           <div style={{ background:"var(--bg-card)", borderRadius:18, border:"1px solid var(--border)",
             padding:24, boxShadow:"var(--shadow-sm)" }}>
@@ -475,9 +576,16 @@ export default function OpportunityDetailPage() {
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", gap:16, position:"sticky", top:20 }}>
+          <button onClick={() => router.push(`/dashboard/coach?opp=${id}&title=${encodeURIComponent(opp.title)}`)}
+            style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%",
+              padding:"14px", borderRadius:14, border:"none", cursor:"pointer",
+              background:"linear-gradient(135deg,#7c3aed,#a78bfa)", color:"#fff", fontWeight:700, fontSize:14,
+              boxShadow:"0 4px 16px rgba(124,58,237,.3)" }}>
+            <MessageSquareText size={17} /> Discuter avec l'IA
+          </button>
           <PrepSection oppId={id} />
           <ApplySection oppId={id} />
-          <LetterSection oppId={id} />
+          <LetterSection oppId={id} title={opp.title} />
         </div>
       </div>
     </div>

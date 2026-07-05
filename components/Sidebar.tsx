@@ -5,10 +5,10 @@ import { useStore } from "@/store/useStore";
 import { LayoutGrid, FileText, Bookmark, FolderOpen, MessageCircle, User, LogOut } from "lucide-react";
 
 const NAV = [
-  { href: "/dashboard",              icon: LayoutGrid,   label: "Feed"         },
+  { href: "/dashboard",              icon: LayoutGrid,   label: "Dashboard"    },
   { href: "/dashboard/applications", icon: FileText,     label: "Candidatures" },
   { href: "/dashboard/saved",        icon: Bookmark,     label: "Favoris"      },
-  { href: "/dashboard/coach",        icon: MessageCircle, label: "Coach IA"    },
+  { href: "/dashboard/coach",        icon: MessageCircle, label: "Link IA"     },
   { href: "/dashboard/documents",    icon: FolderOpen,   label: "Documents"    },
   { href: "/dashboard/profile",      icon: User,         label: "Profil"       },
 ];

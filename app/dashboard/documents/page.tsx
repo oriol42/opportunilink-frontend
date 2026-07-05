@@ -10,6 +10,7 @@ import {
   Check, X, CloudUpload, FolderOpen, Eye, Trash2, Lightbulb, LoaderCircle, LucideIcon,
 } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
+import DocAnalyzer from "@/components/ai/DocAnalyzer";
 
 interface DocumentItem {
   id: string; type: string; file_name: string; file_path: string;
@@ -324,7 +325,8 @@ function DocumentsInner() {
                             </div>
                           </div>
 
-                          <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0, flexWrap:"wrap", justifyContent:"flex-end" }}>
+                            <DocAnalyzer docId={doc.id} fileName={doc.file_name} />
                             <a href={doc.file_path} target="_blank" rel="noopener noreferrer"
                               style={{ fontSize:12, fontWeight:700, color:"#2563eb",
                                 background:"rgba(37,99,235,.1)", padding:"6px 12px", borderRadius:10,

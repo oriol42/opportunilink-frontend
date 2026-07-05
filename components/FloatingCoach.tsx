@@ -15,7 +15,7 @@ const SUGG = [
 function Dots() {
   return (
     <div style={{ display:"flex", gap:4, padding:"12px 16px", alignItems:"center" }}>
-      <span style={{ fontSize:11, color:"#6b7280", marginRight:4 }}>Coach réfléchit</span>
+      <span style={{ fontSize:11, color:"#6b7280", marginRight:4 }}>Link IA réfléchit</span>
       {[0,1,2].map(i => (
         <span key={i} style={{ width:5, height:5, borderRadius:"50%", background:"#10b981",
           display:"inline-block",
@@ -106,7 +106,7 @@ export default function FloatingCoach() {
             background:"linear-gradient(135deg,#f0fdf4,#f8fafc)" }}>
             <CoachAvatar size={40} />
             <div style={{ flex:1 }}>
-              <p style={{ fontWeight:800, fontSize:14, color:"#111827", lineHeight:1.2 }}>Coach IA</p>
+              <p style={{ fontWeight:800, fontSize:14, color:"#111827", lineHeight:1.2 }}>Link IA</p>
               <p style={{ fontSize:11, color:"#059669", fontWeight:600 }}>● En ligne · Prêt à t'aider</p>
             </div>
             <button onClick={() => setOpen(false)}

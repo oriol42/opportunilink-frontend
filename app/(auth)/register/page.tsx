@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, LoaderCircle } from "lucide-react";
 import AuthShell from "@/components/auth/AuthShell";
 
 const inputWrap: React.CSSProperties = { position: "relative" };
@@ -132,9 +132,11 @@ export default function RegisterPage() {
             background: loading ? "var(--accent-light)" : "var(--accent)",
             color: "#fff", fontWeight: 600, fontSize: 14,
             cursor: loading ? "not-allowed" : "pointer", marginTop: 4,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            transition: "background .15s, transform .1s",
           }}
         >
-          {loading ? "Création..." : "Créer mon compte →"}
+          {loading ? <><LoaderCircle size={16} className="spin" /> Création...</> : "Créer mon compte →"}
         </button>
       </div>
 

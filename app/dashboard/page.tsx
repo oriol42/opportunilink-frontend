@@ -8,9 +8,10 @@ import Link from "next/link";
 import {
   Bot, X, Search, FileText, CircleCheck, Bookmark, User,
   Sparkles, Flame, CalendarClock, ArrowRight, LoaderCircle, LucideIcon,
-  SlidersHorizontal,
+  SlidersHorizontal, ChevronLeft, ChevronRight, FolderOpen,
 } from "lucide-react";
 import CoachingCard from "@/components/dashboard/CoachingCard";
+import AIInsights from "@/components/dashboard/AIInsights";
 import OpportunityCard from "@/components/opportunity/OpportunityCard";
 import OpportunityListRow from "@/components/opportunity/OpportunityListRow";
 import TopMatchCard from "@/components/opportunity/TopMatchCard";
@@ -21,7 +22,7 @@ import EmptyState from "@/components/ui/EmptyState";
 
 interface Stats {
   applications: { total: number; submitted: number; accepted: number };
-  saved_count: number; documents_count: number; profile_pct: number;
+  saved_count: number; documents_count: number; profile_pct: number; document_pct: number;
 }
 
 const TABS = ["Tout","Bourses","Stages","Emplois","Formations","Concours"];
@@ -65,12 +66,19 @@ function DashboardInner() {
   const searchParams = useSearchParams();
   const { user, isAuthLoading } = useStore();
   const [activeTab, setActiveTab] = useState(0);
-  const [showMore, setShowMore] = useState(false);
+  const [explorePage, setExplorePage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [filterCountry, setFilterCountry] = useState("");
   const [filterMaxGpa, setFilterMaxGpa] = useState("");
   const [filterLanguage, setFilterLanguage] = useState("");
+  const [filterField, setFilterField] = useState("");
+  const [filterLevel, setFilterLevel] = useState("");
+  const [filterDeadline, setFilterDeadline] = useState("");
   const searchQ = searchParams.get("q")?.toLowerCase().trim();
+
+  // Revenir à la page 1 dès qu'un filtre, un onglet ou la recherche change.
+  useEffect(() => { setExplorePage(1); },
+    [activeTab, searchQ, filterCountry, filterMaxGpa, filterLanguage, filterField, filterLevel, filterDeadline]);
 
   useEffect(() => { if (!isAuthLoading && !user) router.push("/login"); }, [isAuthLoading, user, router]);
 
@@ -103,6 +111,9 @@ function DashboardInner() {
 
   const userCtx = { level:user.level, field:user.field, languages:user.languages };
   const allOpps = opps ?? [];
+  // Options de filtres dérivées des vraies données (on ne propose que ce qui existe).
+  const fieldOptions = Array.from(new Set(allOpps.flatMap(o => o.required_fields ?? []))).filter(Boolean).sort();
+  const levelOptions = Array.from(new Set(allOpps.flatMap(o => o.required_level ?? []))).filter(Boolean).sort();
 
   const displayOpps = tabType ? allOpps.filter(o => o.type === tabType) : allOpps;
 
@@ -120,24 +131,35 @@ function DashboardInner() {
     const maxGpa = filterMaxGpa ? parseFloat(filterMaxGpa) : null;
     if (maxGpa !== null && o.min_gpa != null && o.min_gpa > maxGpa) return false;
     if (filterLanguage && o.required_languages?.length && !o.required_languages.includes(filterLanguage)) return false;
+    // Filière / niveau : on garde les opportunités ouvertes à tous (liste vide) OU ciblant le critère choisi.
+    if (filterField && (o.required_fields?.length ?? 0) > 0 && !o.required_fields!.includes(filterField)) return false;
+    if (filterLevel && (o.required_level?.length ?? 0) > 0 && !o.required_level!.includes(filterLevel)) return false;
+    if (filterDeadline) {
+      const d = daysLeft(o.deadline);
+      if (filterDeadline === "has" && d === null) return false;
+      if (filterDeadline === "7"  && !(d !== null && d >= 0 && d <= 7)) return false;
+      if (filterDeadline === "30" && !(d !== null && d >= 0 && d <= 30)) return false;
+    }
     return true;
   });
 
-  const activeFilterCount = [filterCountry, filterMaxGpa, filterLanguage].filter(Boolean).length;
+  const activeFilterCount = [filterCountry, filterMaxGpa, filterLanguage, filterField, filterLevel, filterDeadline].filter(Boolean).length;
 
   const sorted = [...filtered].sort((a,b) => (b.relevance_score ?? 0) - (a.relevance_score ?? 0));
   const topMatches  = sorted.filter(o => (o.relevance_score ?? 0) >= 80).slice(0, 3);
   const urgent      = sorted.filter(o => { const d = daysLeft(o.deadline); return d !== null && d >= 0 && d <= 7; }).slice(0, 4);
   const recent      = sorted.slice(0, 6);
   const bySkill     = sorted.filter(o => o.required_fields?.includes(user.field ?? "")).slice(0, 4);
-  const rest        = showMore ? sorted.slice(6) : sorted.slice(6, 14);
+  const EXPLORE_PAGE_SIZE = 30;
+  const explorePageCount = Math.max(1, Math.ceil(sorted.length / EXPLORE_PAGE_SIZE));
+  const explorePageSafe  = Math.min(explorePage, explorePageCount);
+  const exploreItems     = sorted.slice((explorePageSafe - 1) * EXPLORE_PAGE_SIZE, explorePageSafe * EXPLORE_PAGE_SIZE);
   const urgentCount = filtered.filter(o => { const d = daysLeft(o.deadline); return d !== null && d >= 0 && d <= 7; }).length;
   const firstName   = user.full_name?.split(" ")[0] ?? "toi";
-  const deadlines   = filtered.filter(o => { const d = daysLeft(o.deadline); return d !== null && d >= 0 && d <= 14; }).slice(0, 5);
   const mostUrgent  = sorted.find(o => { const d = daysLeft(o.deadline); return d !== null && d >= 0 && d <= 3; });
 
   return (
-    <div style={{ display:"flex", flexDirection: "column", gap: 22, padding:"24px 28px 32px", minHeight:"100%" }}>
+    <div className="animate-fade-in" style={{ display:"flex", flexDirection: "column", gap: 22, padding:"24px 28px 32px", minHeight:"100%" }}>
 
       {!searchQ && mostUrgent && (
         <Link href={`/opportunity/${mostUrgent.id}`} style={{ textDecoration: "none" }}>
@@ -204,7 +226,7 @@ function DashboardInner() {
                 <div style={{ flex:1, display:"flex", flexWrap:"wrap", background:"var(--bg-card)", borderRadius:12, padding:4,
                   border:"1px solid var(--border)", gap:2 }}>
                   {TABS.map((tab, i) => (
-                    <button key={tab} onClick={() => { setActiveTab(i); setShowMore(false); }} style={{
+                    <button key={tab} onClick={() => setActiveTab(i)} style={{
                       flex:"1 1 auto", minWidth:70, padding:"9px 6px", borderRadius:9, border:"none", cursor:"pointer",
                       fontWeight:600, fontSize:13, transition:"all .15s",
                       background: activeTab === i ? "var(--text-primary)" : "transparent",
@@ -264,8 +286,41 @@ function DashboardInner() {
                       <option value="es">Espagnol</option>
                     </select>
                   </div>
+                  {fieldOptions.length > 0 && (
+                    <div style={{ flex:"1 1 170px" }}>
+                      <label style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", display:"block", marginBottom:5 }}>Filière ciblée</label>
+                      <select value={filterField} onChange={e => setFilterField(e.target.value)}
+                        style={{ width:"100%", padding:"8px 12px", borderRadius:9, border:"1px solid var(--border)",
+                        background:"var(--bg-input)", color:"var(--text-primary)", fontSize:13, outline:"none", cursor:"pointer" }}>
+                        <option value="">Toutes les filières</option>
+                        {fieldOptions.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {levelOptions.length > 0 && (
+                    <div style={{ flex:"1 1 140px" }}>
+                      <label style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", display:"block", marginBottom:5 }}>Niveau requis</label>
+                      <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}
+                        style={{ width:"100%", padding:"8px 12px", borderRadius:9, border:"1px solid var(--border)",
+                        background:"var(--bg-input)", color:"var(--text-primary)", fontSize:13, outline:"none", cursor:"pointer" }}>
+                        <option value="">Tous niveaux</option>
+                        {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <div style={{ flex:"1 1 150px" }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", display:"block", marginBottom:5 }}>Date limite</label>
+                    <select value={filterDeadline} onChange={e => setFilterDeadline(e.target.value)}
+                      style={{ width:"100%", padding:"8px 12px", borderRadius:9, border:"1px solid var(--border)",
+                      background:"var(--bg-input)", color:"var(--text-primary)", fontSize:13, outline:"none", cursor:"pointer" }}>
+                      <option value="">Peu importe</option>
+                      <option value="7">Ferme sous 7 jours</option>
+                      <option value="30">Ferme sous 30 jours</option>
+                      <option value="has">Avec date limite</option>
+                    </select>
+                  </div>
                   {activeFilterCount > 0 && (
-                    <button onClick={() => { setFilterCountry(""); setFilterMaxGpa(""); setFilterLanguage(""); }}
+                    <button onClick={() => { setFilterCountry(""); setFilterMaxGpa(""); setFilterLanguage(""); setFilterField(""); setFilterLevel(""); setFilterDeadline(""); }}
                       style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", borderRadius:9,
                         border:"1px solid var(--border-danger)", background:"var(--bg-danger)", color:"var(--text-danger)",
                         fontSize:12, fontWeight:700, cursor:"pointer" }}>
@@ -346,20 +401,34 @@ function DashboardInner() {
                       </div>
                     </section>
                   )}
-                  {rest.length > 0 && (
+                  {sorted.length > 0 && (
                     <section>
                       <SH icon={LayoutGridIcon} title="Explorer toutes les opportunités" count={sorted.length} />
                       <div style={{ background:"var(--bg-card)", borderRadius:14, border:"1px solid var(--border)",
-                        overflow:"hidden", marginBottom:16 }}>
-                        {rest.map(opp => <OpportunityListRow key={opp.id} opp={opp} />)}
+                        overflow:"hidden", marginBottom:14 }}>
+                        {exploreItems.map(opp => <OpportunityListRow key={opp.id} opp={opp} />)}
                       </div>
-                      {!showMore && sorted.length > 14 && (
-                        <div style={{ textAlign:"center" }}>
-                          <button onClick={() => setShowMore(true)} style={{
-                            fontSize:14, fontWeight:600, color:"var(--accent-dark)",
-                            background:"var(--accent-light)", border:"1px solid var(--sidebar-active-border)",
-                            padding:"13px 30px", borderRadius:12, cursor:"pointer",
-                          }}>Voir plus ({sorted.length - 14} opportunités) →</button>
+                      {explorePageCount > 1 && (
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+                          <button onClick={() => setExplorePage(p => Math.max(1, p - 1))} disabled={explorePageSafe <= 1}
+                            style={{ display:"flex", alignItems:"center", gap:5, fontSize:13, fontWeight:600,
+                              color: explorePageSafe <= 1 ? "var(--text-muted)" : "var(--accent-dark)",
+                              background:"var(--bg-card)", border:"1px solid var(--border)", padding:"9px 16px",
+                              borderRadius:10, cursor: explorePageSafe <= 1 ? "not-allowed" : "pointer",
+                              opacity: explorePageSafe <= 1 ? .5 : 1, transition:"all .15s" }}>
+                            <ChevronLeft size={15} /> Précédent
+                          </button>
+                          <span style={{ fontSize:13, fontWeight:700, color:"var(--text-secondary)", minWidth:98, textAlign:"center" }}>
+                            Page {explorePageSafe} / {explorePageCount}
+                          </span>
+                          <button onClick={() => setExplorePage(p => Math.min(explorePageCount, p + 1))} disabled={explorePageSafe >= explorePageCount}
+                            style={{ display:"flex", alignItems:"center", gap:5, fontSize:13, fontWeight:600,
+                              color: explorePageSafe >= explorePageCount ? "var(--text-muted)" : "var(--accent-dark)",
+                              background:"var(--bg-card)", border:"1px solid var(--border)", padding:"9px 16px",
+                              borderRadius:10, cursor: explorePageSafe >= explorePageCount ? "not-allowed" : "pointer",
+                              opacity: explorePageSafe >= explorePageCount ? .5 : 1, transition:"all .15s" }}>
+                            Suivant <ChevronRight size={15} />
+                          </button>
                         </div>
                       )}
                     </section>
@@ -394,53 +463,40 @@ function DashboardInner() {
               textDecoration:"none" }}>Améliorer mon profil →</Link>
           </div>
 
-          <div style={{ background:"var(--bg-hero)", borderRadius:16, padding:"17px",
-            border:"1px solid rgba(139,92,246,.2)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:11 }}>
-              <Bot size={16} color="#a78bfa" />
-              <p style={{ fontWeight:600, fontSize:13, color:"#fff", flex:1 }}>Insight IA</p>
-              <span style={{ fontSize:10, fontWeight:700, color:"#a78bfa",
-                background:"rgba(167,139,250,.2)", padding:"3px 8px", borderRadius:20 }}>IA</span>
-            </div>
-            <p style={{ fontSize:12, color:"rgba(255,255,255,.55)", lineHeight:1.6,
-              marginBottom: topMatches.length > 0 ? 11 : 0 }}>
-              {topMatches.length > 0
-                ? `${topMatches.length} opportunité${topMatches.length>1?"s":""} correspondent à +80% de ton profil.`
-                : stats?.profile_pct && stats.profile_pct < 60
-                ? "Complète ton profil pour débloquer les recommandations."
-                : "Ton feed est actualisé automatiquement."}
-            </p>
-            {topMatches.length > 0 && (
-              <Link href={`/opportunity/${topMatches[0].id}`} style={{ display:"block", fontSize:12,
-                fontWeight:600, color:"#fff", background:"linear-gradient(135deg,#7c3aed,#a78bfa)",
-                padding:"9px", borderRadius:10, textDecoration:"none", textAlign:"center" }}>
-                Voir mon meilleur match →
-              </Link>
-            )}
-          </div>
+          <AIInsights opps={sorted} user={userCtx} stats={stats} />
 
-          {deadlines.length > 0 && (
+          {stats && (
             <div style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)",
-              overflow:"hidden", boxShadow:"var(--shadow-sm)" }}>
-              <div style={{ padding:"12px 15px", borderBottom:"1px solid var(--border-subtle)",
-                display:"flex", alignItems:"center", gap:7 }}>
-                <CalendarClock size={14} color="var(--text-secondary)" />
-                <p style={{ fontWeight:600, fontSize:13, color:"var(--text-primary)" }}>Deadlines · 14 jours</p>
+              padding:"16px", boxShadow:"var(--shadow-sm)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+                <FolderOpen size={15} color="var(--text-secondary)" />
+                <p style={{ fontWeight:600, fontSize:13, color:"var(--text-primary)", flex:1 }}>Ton dossier</p>
               </div>
-              {deadlines.map(opp => {
-                const d = daysLeft(opp.deadline)!;
-                return (
-                  <Link key={opp.id} href={`/opportunity/${opp.id}`} className="sidebar-item" style={{
-                    display:"flex", alignItems:"center", gap:9, padding:"9px 15px",
-                    borderBottom:"1px solid var(--border-subtle)", textDecoration:"none" }}>
-                    <div style={{ width:5, height:5, borderRadius:"50%", flexShrink:0,
-                      background: d <= 3 ? "var(--text-danger)" : d <= 7 ? "var(--text-warning)" : "var(--text-muted)" }} />
-                    <p style={{ flex:1, fontSize:12, fontWeight:500, color:"var(--text-primary)",
-                      overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{opp.title}</p>
-                    <Badge variant={d <= 7 ? "danger" : "neutral"}>J-{d}</Badge>
-                  </Link>
-                );
-              })}
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:7 }}>
+                <span style={{ fontSize:12, color:"var(--text-secondary)", fontWeight:600 }}>Documents essentiels</span>
+                <span style={{ fontSize:13, fontWeight:700,
+                  color: (stats.document_pct ?? 0) >= 100 ? "var(--accent)" : "var(--text-warning)" }}>
+                  {stats.document_pct ?? 0}%
+                </span>
+              </div>
+              <div style={{ background:"var(--bg-surface-2)", height:6, borderRadius:3, overflow:"hidden", marginBottom:13 }}>
+                <div style={{ height:"100%", borderRadius:3, width:`${stats.document_pct ?? 0}%`,
+                  background: (stats.document_pct ?? 0) >= 100 ? "var(--accent)" : "var(--text-warning)" }} />
+              </div>
+              <div style={{ display:"flex", gap:8, marginBottom:13 }}>
+                {[{ v: stats.applications?.total ?? 0, l: "Candidatures" },
+                  { v: stats.applications?.submitted ?? 0, l: "Envoyées" }].map(x => (
+                  <div key={x.l} style={{ flex:1, background:"var(--bg-surface-2)", borderRadius:10,
+                    padding:"8px 10px", textAlign:"center" }}>
+                    <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:18, color:"var(--text-primary)" }}>{x.v}</p>
+                    <p style={{ fontSize:10.5, color:"var(--text-muted)", fontWeight:600 }}>{x.l}</p>
+                  </div>
+                ))}
+              </div>
+              <Link href="/dashboard/documents" style={{ display:"block", textAlign:"center", fontSize:13,
+                fontWeight:600, color:"var(--accent-dark)", background:"var(--accent-light)",
+                border:"1px solid var(--sidebar-active-border)", padding:"9px", borderRadius:10,
+                textDecoration:"none" }}>Ouvrir mon coffre-fort →</Link>
             </div>
           )}
 

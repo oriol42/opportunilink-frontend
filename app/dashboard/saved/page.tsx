@@ -5,7 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@/store/useStore";
 import { api } from "@/lib/api";
 import Link from "next/link";
-import { Bookmark, Globe, X, LoaderCircle } from "lucide-react";
+import { Globe, X, LoaderCircle } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 import { typeConfig, daysLeft } from "@/lib/opportunityHelpers";
 
 interface SavedOpp {
@@ -44,12 +45,7 @@ function SavedInner() {
         {isLoading && <div style={{ display:"flex", flexDirection:"column", gap:12 }}>{[1,2,3].map(i=><div key={i} style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)", padding:20, height:100 }} className="animate-pulse" />)}</div>}
         {isError && <div style={{ background:"var(--bg-danger)", border:"1px solid var(--border-danger)", borderRadius:16, padding:20, color:"var(--text-danger)", fontSize:14 }}>Erreur lors du chargement.</div>}
         {!isLoading && data?.length === 0 && (
-          <div style={{ textAlign:"center", padding:"80px 20px" }}>
-            <Bookmark size={40} color="var(--text-muted)" style={{ margin:"0 auto 16px" }} />
-            <p style={{ fontWeight:700, fontSize:18, color:"var(--text-primary)", marginBottom:8 }}>Aucun favori</p>
-            <p style={{ fontSize:14, color:"var(--text-muted)", marginBottom:24 }}>Sauvegarde des opportunités depuis le feed en cliquant sur l&apos;icône favori</p>
-            <Link href="/dashboard" style={{ background:"var(--accent)", color:"#fff", fontWeight:700, fontSize:14, padding:"10px 24px", borderRadius:12, textDecoration:"none" }}>Explorer le feed →</Link>
-          </div>
+          <EmptyState variant="saved" action={{ label: "Explorer le feed", href: "/dashboard" }} />
         )}
         {data && data.length > 0 && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>

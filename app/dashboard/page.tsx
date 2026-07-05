@@ -6,8 +6,9 @@ import { useStore } from "@/store/useStore";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import {
-  Bot, X, Send, Search, FileText, CircleCheck, Bookmark, User,
+  Bot, X, Search, FileText, CircleCheck, Bookmark, User,
   Sparkles, Flame, CalendarClock, ArrowRight, LoaderCircle, LucideIcon,
+  SlidersHorizontal,
 } from "lucide-react";
 import CoachingCard from "@/components/dashboard/CoachingCard";
 import OpportunityCard from "@/components/opportunity/OpportunityCard";
@@ -16,6 +17,7 @@ import TopMatchCard from "@/components/opportunity/TopMatchCard";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { OpportunityLite, daysLeft } from "@/lib/opportunityHelpers";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface Stats {
   applications: { total: number; submitted: number; accepted: number };
@@ -24,142 +26,6 @@ interface Stats {
 
 const TABS = ["Tout","Bourses","Stages","Emplois","Formations","Concours"];
 const TAB_TYPES = ["","bourse","stage","emploi","formation","concours"];
-
-/* ── Bouton IA flottant ── */
-function AIFloatButton({ opps, user }: { opps: OpportunityLite[]; user: { full_name?: string | null; level?: string | null; field?: string | null } }) {
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<{ role: "user"|"ai"; text: string }[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const topOpps = opps.slice(0, 10).map(o =>
-    `- "${o.title}" (${o.type}, ${o.country ?? "International"}, score ${Math.round(o.relevance_score)}%, deadline: ${o.deadline ?? "non précisée"})`
-  ).join("\n");
-
-  const systemContext = `Tu es le coach IA d'OpportuLink, une plateforme d'opportunités pour étudiants camerounais.
-Profil étudiant : ${user.full_name ?? "Étudiant"}, niveau ${user.level ?? "non précisé"}, filière ${user.field ?? "non précisée"}.
-Opportunités actuellement dans le feed de l'étudiant :
-${topOpps || "Aucune opportunité chargée."}
-
-Tes rôles :
-- Conseiller sur les opportunités spécifiques du feed
-- Générer un plan d'étude pour combler les manques (langues, docs, niveau)
-- Donner des conseils de candidature précis et actionnables
-- Répondre en français, de façon concise et bienveillante
-- Ne jamais inventer d'opportunités qui ne sont pas dans le feed`;
-
-  async function sendMessage() {
-    if (!input.trim() || loading) return;
-    const userMsg = input.trim();
-    setInput("");
-    setMessages(prev => [...prev, { role:"user", text:userMsg }]);
-    setLoading(true);
-    try {
-      const res = await api.post("/ai/chat", { message: userMsg, context: systemContext });
-      setMessages(prev => [...prev, { role:"ai", text: res.data.reply ?? "Je n'ai pas pu répondre." }]);
-    } catch {
-      setMessages(prev => [...prev, { role:"ai", text: "Erreur de connexion. Réessaie." }]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <>
-      <button onClick={() => setOpen(o => !o)} style={{
-        position: "fixed", bottom: 28, right: 28, zIndex: 100,
-        width: 56, height: 56, borderRadius: "50%",
-        background: "linear-gradient(135deg,var(--accent),var(--accent-dark))",
-        border: "none", cursor: "pointer",
-        boxShadow: "0 4px 24px rgba(16,185,129,.4)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "transform .2s, box-shadow .2s",
-      }}
-      onMouseEnter={e => { e.currentTarget.style.transform="scale(1.08)"; }}
-      onMouseLeave={e => { e.currentTarget.style.transform="scale(1)"; }}
-      aria-label="Ouvrir le coach IA">
-        {open ? <X size={22} color="#fff" /> : <Bot size={24} color="#fff" />}
-      </button>
-
-      {open && (
-        <div className="ai-panel" style={{
-          position: "fixed", bottom: 96, right: 28, zIndex: 100,
-          width: 360, background: "var(--bg-card)", borderRadius: 20,
-          border: "1px solid var(--border)", boxShadow: "0 8px 48px rgba(0,0,0,.18)",
-          display: "flex", flexDirection: "column", maxHeight: 520,
-        }}>
-          <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--border-subtle)",
-            background: "var(--bg-hero)", borderRadius: "20px 20px 0 0",
-            display: "flex", alignItems: "center", gap: 10 }}>
-            <Bot size={20} color="#6ee7b7" />
-            <div>
-              <p style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>Coach IA OpportuLink</p>
-              <p style={{ fontSize: 11, color: "#6ee7b7" }}>Connecté à ton feed · {opps.length} opportunités</p>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px",
-            display: "flex", flexDirection: "column", gap: 10, minHeight: 200, maxHeight: 320 }}>
-            {messages.length === 0 && (
-              <div style={{ textAlign: "center", padding: "20px 0" }}>
-                <Bot size={30} color="var(--accent)" style={{ marginBottom: 8 }} />
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                  Pose-moi une question sur une opportunité de ton feed, ou demande-moi un plan d'étude !
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
-                  {[
-                    "Quelle est ma meilleure opportunité ?",
-                    "Crée-moi un plan pour la bourse DAAD",
-                    "Qu'est-ce qui me manque pour postuler ?",
-                  ].map(s => (
-                    <button key={s} onClick={() => setInput(s)} style={{
-                      fontSize: 11, fontWeight: 600, color: "var(--accent-dark)",
-                      background: "var(--accent-light)", border: "1px solid var(--sidebar-active-border)",
-                      padding: "7px 12px", borderRadius: 20, cursor: "pointer", textAlign: "left",
-                    }}>{s}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                <div style={{
-                  maxWidth: "82%", padding: "9px 13px", borderRadius: 14, fontSize: 13, lineHeight: 1.6,
-                  background: m.role === "user" ? "var(--accent)" : "var(--bg-surface-2)",
-                  color: m.role === "user" ? "#fff" : "var(--text-primary)",
-                  borderBottomRightRadius: m.role === "user" ? 4 : 14,
-                  borderBottomLeftRadius: m.role === "ai" ? 4 : 14,
-                }}>{m.text}</div>
-              </div>
-            ))}
-            {loading && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px",
-                background: "var(--bg-surface-2)", borderRadius: 14, width: "fit-content" }}>
-                <LoaderCircle size={14} color="var(--accent)" className="spin" />
-                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Réflexion...</span>
-              </div>
-            )}
-          </div>
-
-          <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border-subtle)", display: "flex", gap: 8 }}>
-            <input
-              value={input} onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              placeholder="Pose ta question..."
-              style={{ flex: 1, background: "var(--bg-input)", border: "1px solid var(--border)",
-                borderRadius: 10, padding: "9px 12px", fontSize: 13, color: "var(--text-primary)", outline: "none" }}
-            />
-            <button onClick={sendMessage} disabled={loading || !input.trim()} style={{
-              background: "var(--accent)", border: "none", borderRadius: 10, padding: "9px 12px",
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              opacity: loading || !input.trim() ? 0.5 : 1,
-            }}><Send size={15} color="#fff" /></button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
 
 function SkeletonCard() {
   return (
@@ -200,6 +66,10 @@ function DashboardInner() {
   const { user, isAuthLoading } = useStore();
   const [activeTab, setActiveTab] = useState(0);
   const [showMore, setShowMore] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterCountry, setFilterCountry] = useState("");
+  const [filterMaxGpa, setFilterMaxGpa] = useState("");
+  const [filterLanguage, setFilterLanguage] = useState("");
   const searchQ = searchParams.get("q")?.toLowerCase().trim();
 
   useEffect(() => { if (!isAuthLoading && !user) router.push("/login"); }, [isAuthLoading, user, router]);
@@ -236,7 +106,7 @@ function DashboardInner() {
 
   const displayOpps = tabType ? allOpps.filter(o => o.type === tabType) : allOpps;
 
-  const filtered = searchQ
+  const searchFiltered = searchQ
     ? displayOpps.filter(o =>
         o.title.toLowerCase().includes(searchQ) ||
         (o.description||"").toLowerCase().includes(searchQ) ||
@@ -244,6 +114,16 @@ function DashboardInner() {
         o.type.toLowerCase().includes(searchQ)
       )
     : displayOpps;
+
+  const filtered = searchFiltered.filter(o => {
+    if (filterCountry && !(o.country||"").toLowerCase().includes(filterCountry.toLowerCase())) return false;
+    const maxGpa = filterMaxGpa ? parseFloat(filterMaxGpa) : null;
+    if (maxGpa !== null && o.min_gpa != null && o.min_gpa > maxGpa) return false;
+    if (filterLanguage && o.required_languages?.length && !o.required_languages.includes(filterLanguage)) return false;
+    return true;
+  });
+
+  const activeFilterCount = [filterCountry, filterMaxGpa, filterLanguage].filter(Boolean).length;
 
   const sorted = [...filtered].sort((a,b) => (b.relevance_score ?? 0) - (a.relevance_score ?? 0));
   const topMatches  = sorted.filter(o => (o.relevance_score ?? 0) >= 80).slice(0, 3);
@@ -320,17 +200,81 @@ function DashboardInner() {
 
           {!searchQ && (
             <div>
-              <div style={{ display:"flex", flexWrap:"wrap", background:"var(--bg-card)", borderRadius:12, padding:4,
-                border:"1px solid var(--border)", gap:2 }}>
-                {TABS.map((tab, i) => (
-                  <button key={tab} onClick={() => { setActiveTab(i); setShowMore(false); }} style={{
-                    flex:"1 1 auto", minWidth:70, padding:"9px 6px", borderRadius:9, border:"none", cursor:"pointer",
-                    fontWeight:600, fontSize:13, transition:"all .15s",
-                    background: activeTab === i ? "var(--text-primary)" : "transparent",
-                    color: activeTab === i ? "var(--bg-card)" : "var(--text-muted)",
-                  }}>{tab}</button>
-                ))}
+              <div style={{ display:"flex", gap:8, alignItems:"stretch" }}>
+                <div style={{ flex:1, display:"flex", flexWrap:"wrap", background:"var(--bg-card)", borderRadius:12, padding:4,
+                  border:"1px solid var(--border)", gap:2 }}>
+                  {TABS.map((tab, i) => (
+                    <button key={tab} onClick={() => { setActiveTab(i); setShowMore(false); }} style={{
+                      flex:"1 1 auto", minWidth:70, padding:"9px 6px", borderRadius:9, border:"none", cursor:"pointer",
+                      fontWeight:600, fontSize:13, transition:"all .15s",
+                      background: activeTab === i ? "var(--text-primary)" : "transparent",
+                      color: activeTab === i ? "var(--bg-card)" : "var(--text-muted)",
+                    }}>{tab}</button>
+                  ))}
+                </div>
+                <button onClick={() => setShowFilters(s => !s)} style={{
+                  flexShrink:0, display:"flex", alignItems:"center", gap:6, padding:"0 14px",
+                  borderRadius:12, border:"1px solid var(--border)", cursor:"pointer", fontWeight:600, fontSize:13,
+                  background: showFilters ? "var(--text-primary)" : "var(--bg-card)",
+                  color: showFilters ? "var(--bg-card)" : "var(--text-secondary)" }}>
+                  <SlidersHorizontal size={14} />
+                  Filtres
+                  {activeFilterCount > 0 && (
+                    <span style={{ fontSize:10, fontWeight:700, background: showFilters ? "var(--bg-card)" : "var(--accent)",
+                      color: showFilters ? "var(--text-primary)" : "#fff", borderRadius:20, padding:"1px 6px" }}>
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
               </div>
+
+              {showFilters && (
+                <div style={{ marginTop:8, background:"var(--bg-card)", borderRadius:12, border:"1px solid var(--border)",
+                  padding:14, display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
+                  <div style={{ flex:"1 1 160px" }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", display:"block", marginBottom:5 }}>Pays</label>
+                    <input value={filterCountry} onChange={e => setFilterCountry(e.target.value)}
+                      placeholder="Ex: France, Cameroun..." style={{ width:"100%", padding:"8px 12px",
+                      borderRadius:9, border:"1px solid var(--border)", background:"var(--bg-input)",
+                      color:"var(--text-primary)", fontSize:13, outline:"none", boxSizing:"border-box" }} />
+                  </div>
+                  <div style={{ flex:"1 1 140px" }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", display:"block", marginBottom:5 }}>
+                      Moyenne max demandée
+                    </label>
+                    <select value={filterMaxGpa} onChange={e => setFilterMaxGpa(e.target.value)}
+                      style={{ width:"100%", padding:"8px 12px", borderRadius:9, border:"1px solid var(--border)",
+                      background:"var(--bg-input)", color:"var(--text-primary)", fontSize:13, outline:"none", cursor:"pointer" }}>
+                      <option value="">Peu importe</option>
+                      <option value="10">≤ 10/20</option>
+                      <option value="12">≤ 12/20</option>
+                      <option value="14">≤ 14/20</option>
+                      <option value="16">≤ 16/20</option>
+                    </select>
+                  </div>
+                  <div style={{ flex:"1 1 140px" }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", display:"block", marginBottom:5 }}>Langue requise</label>
+                    <select value={filterLanguage} onChange={e => setFilterLanguage(e.target.value)}
+                      style={{ width:"100%", padding:"8px 12px", borderRadius:9, border:"1px solid var(--border)",
+                      background:"var(--bg-input)", color:"var(--text-primary)", fontSize:13, outline:"none", cursor:"pointer" }}>
+                      <option value="">Toutes</option>
+                      <option value="fr">Français</option>
+                      <option value="en">Anglais</option>
+                      <option value="de">Allemand</option>
+                      <option value="es">Espagnol</option>
+                    </select>
+                  </div>
+                  {activeFilterCount > 0 && (
+                    <button onClick={() => { setFilterCountry(""); setFilterMaxGpa(""); setFilterLanguage(""); }}
+                      style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", borderRadius:9,
+                        border:"1px solid var(--border-danger)", background:"var(--bg-danger)", color:"var(--text-danger)",
+                        fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                      <X size={12} /> Effacer
+                    </button>
+                  )}
+                </div>
+              )}
+
               {isFetching && (
                 <div style={{ height:2, background:"var(--border-subtle)", borderRadius:2, marginTop:3, overflow:"hidden" }}>
                   <div style={{ height:"100%", background:"var(--accent)", borderRadius:2,
@@ -347,14 +291,12 @@ function DashboardInner() {
           )}
 
           {!isLoading && sorted.length === 0 && (
-            <Card style={{ textAlign:"center", padding:"60px 20px" }}>
-              <Search size={32} color="var(--text-muted)" style={{ marginBottom: 12 }} />
-              <p style={{ fontWeight:600, fontSize:16, color:"var(--text-primary)", marginBottom:6 }}>
-                {searchQ ? `Aucun résultat pour "${searchQ}"` : "Aucune opportunité"}
-              </p>
-              <p style={{ fontSize:13, color:"var(--text-muted)" }}>
-                {searchQ ? "Essaie d'autres mots-clés." : "Essaie un autre onglet."}
-              </p>
+            <Card style={{ padding: 0 }}>
+              <EmptyState
+                variant={searchQ ? "search" : "feed"}
+                title={searchQ ? `Aucun résultat pour "${searchQ}"` : undefined}
+                subtitle={searchQ ? "Essaie d'autres mots-clés ou vérifie tes filtres." : undefined}
+              />
             </Card>
           )}
 
@@ -364,7 +306,7 @@ function DashboardInner() {
               {searchQ && (
                 <section>
                   <SH icon={Search} title={`Résultats pour "${searchQ}"`} count={sorted.length} />
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:16 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,340px))", gap:16 }}>
                     {sorted.map(opp => <OpportunityCard key={opp.id} opp={opp} user={userCtx} />)}
                   </div>
                 </section>
@@ -383,18 +325,15 @@ function DashboardInner() {
                   {urgent.length > 0 && (
                     <section>
                       <SH icon={Flame} title="Deadlines urgentes — cette semaine" count={urgent.length} color="var(--text-urgent)" />
-                      <div style={{ background:"var(--bg-urgent)", borderRadius:16,
-                        border:"1px solid var(--border-urgent)", padding:16 }}>
-                        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:16 }}>
-                          {urgent.map(opp => <OpportunityCard key={opp.id} opp={opp} user={userCtx} />)}
-                        </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,340px))", gap:16 }}>
+                        {urgent.map(opp => <OpportunityCard key={opp.id} opp={opp} user={userCtx} />)}
                       </div>
                     </section>
                   )}
                   {recent.length > 0 && (
                     <section>
                       <SH icon={Sparkles} title="Nouvelles opportunités" count={recent.length} />
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:16 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,340px))", gap:16 }}>
                         {recent.map(opp => <OpportunityCard key={opp.id} opp={opp} user={userCtx} />)}
                       </div>
                     </section>
@@ -402,7 +341,7 @@ function DashboardInner() {
                   {bySkill.length > 0 && user.field && (
                     <section>
                       <SH icon={FileText} title={`Pour ta filière — ${user.field}`} count={bySkill.length} color="#2563eb" />
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:16 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,340px))", gap:16 }}>
                         {bySkill.map(opp => <OpportunityCard key={opp.id} opp={opp} user={userCtx} />)}
                       </div>
                     </section>
@@ -435,37 +374,24 @@ function DashboardInner() {
           gap:14, alignSelf:"flex-start", position:"sticky", top:16 }}>
 
           <div style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)",
-            overflow:"hidden", boxShadow:"var(--shadow-sm)" }}>
-            <div style={{ background:"var(--bg-hero)", padding:"20px" }}>
-              <div style={{ width:46, height:46, borderRadius:"50%",
-                background:"linear-gradient(135deg,var(--accent),var(--accent-dark))",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:16, fontWeight:700, color:"#fff", marginBottom:11,
-                border:"2px solid rgba(16,185,129,.4)" }}>
-                {user.full_name?.split(" ").map((n:string)=>n[0]).slice(0,2).join("").toUpperCase() ?? "?"}
-              </div>
-              <p style={{ fontWeight:600, fontSize:15, color:"#fff", marginBottom:3 }}>{user.full_name}</p>
-              <p style={{ fontSize:12, color:"#6ee7b7" }}>{user.level}{user.field ? ` · ${user.field}` : ""}</p>
-            </div>
-            <div style={{ padding:"15px" }}>
-              {stats && (
-                <>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-                    <span style={{ fontSize:12, color:"var(--text-muted)", fontWeight:600 }}>Profil complété</span>
-                    <span style={{ fontSize:13, fontWeight:700,
-                      color: stats.profile_pct >= 80 ? "var(--accent)" : "var(--text-warning)" }}>{stats.profile_pct}%</span>
-                  </div>
-                  <div style={{ background:"var(--bg-surface-2)", height:6, borderRadius:3, overflow:"hidden", marginBottom:13 }}>
-                    <div style={{ height:"100%", borderRadius:3, width:`${stats.profile_pct}%`,
-                      background: stats.profile_pct >= 80 ? "var(--accent)" : "var(--text-warning)" }} />
-                  </div>
-                </>
-              )}
-              <Link href="/dashboard/profile" style={{ display:"block", textAlign:"center", fontSize:13,
-                fontWeight:600, color:"var(--accent-dark)", background:"var(--accent-light)",
-                border:"1px solid var(--sidebar-active-border)", padding:"9px", borderRadius:10,
-                textDecoration:"none" }}>Améliorer mon profil →</Link>
-            </div>
+            padding:"16px", boxShadow:"var(--shadow-sm)" }}>
+            {stats && (
+              <>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                  <span style={{ fontSize:12, color:"var(--text-secondary)", fontWeight:600 }}>Profil complété</span>
+                  <span style={{ fontSize:13, fontWeight:700,
+                    color: stats.profile_pct >= 80 ? "var(--accent)" : "var(--text-warning)" }}>{stats.profile_pct}%</span>
+                </div>
+                <div style={{ background:"var(--bg-surface-2)", height:6, borderRadius:3, overflow:"hidden", marginBottom:13 }}>
+                  <div style={{ height:"100%", borderRadius:3, width:`${stats.profile_pct}%`,
+                    background: stats.profile_pct >= 80 ? "var(--accent)" : "var(--text-warning)" }} />
+                </div>
+              </>
+            )}
+            <Link href="/dashboard/profile" style={{ display:"block", textAlign:"center", fontSize:13,
+              fontWeight:600, color:"var(--accent-dark)", background:"var(--accent-light)",
+              border:"1px solid var(--sidebar-active-border)", padding:"9px", borderRadius:10,
+              textDecoration:"none" }}>Améliorer mon profil →</Link>
           </div>
 
           <div style={{ background:"var(--bg-hero)", borderRadius:16, padding:"17px",
@@ -521,7 +447,6 @@ function DashboardInner() {
         </aside>
       </div>
 
-      <AIFloatButton opps={displayOpps} user={{ full_name:user.full_name, level:user.level, field:user.field }} />
     </div>
   );
 }

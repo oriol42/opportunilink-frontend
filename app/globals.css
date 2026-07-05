@@ -26,7 +26,7 @@
   .grid > * { min-width: 0; }
 }
 
-/* -- Responsive dashboard -- */
+/* ── Responsive dashboard ── */
 .dashboard-grid {
   grid-template-columns: minmax(0, 1fr) 300px !important;
 }
@@ -49,34 +49,38 @@
   [style*="padding:\"28px 32px"] {
     padding: 20px 16px 24px !important;
   }
-
 }
 
-/* -- Responsive profil -- */
-@media (max-width: 900px) {
-  [style*="gridTemplateColumns:\"300px 1fr\""] {
-    grid-template-columns: 1fr !important;
-  }
+/* ── Responsive profil ──
+   Ces pages vivent DANS le dashboard : la sidebar (216px) mange une partie
+   de la largeur de la fenêtre sur desktop (visible ≥1024px). Le point de
+   bascule doit donc être plus haut qu'un simple 900px, sinon entre 1024px
+   et ~1240px de fenêtre, le contenu réel est étroit mais la règle ne se
+   déclenche jamais. */
+@media (max-width: 1320px) {
+  .profile-grid { grid-template-columns: 1fr !important; }
 }
 
-/* -- Responsive documents -- */
-@media (max-width: 900px) {
+/* ── Responsive documents (même raison que ci-dessus) ── */
+@media (max-width: 1320px) {
   .documents-grid { grid-template-columns: 1fr !important; }
 }
 
-/* -- Responsive opportunité détail -- */
+/* ── Responsive opportunité détail ──
+   Cette page N'A PAS de sidebar (route hors dashboard) : pas besoin
+   de compenser, 900px suffit. ── */
 @media (max-width: 900px) {
-  [style*="gridTemplateColumns:\"1fr 380px\""] {
-    grid-template-columns: 1fr !important;
-  }
+  .opp-detail-grid { grid-template-columns: 1fr !important; }
 }
 
-/* -- Responsive candidatures stats -- */
+/* ── Responsive candidatures stats ──
+   Se déclenche toujours sous 1024px, donc sidebar déjà masquée : pas
+   besoin de compenser non plus. ── */
 @media (max-width: 600px) {
   .applications-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
-/* -- OpportuLink Design System -- */
+/* ── OpportuLink Design System ── */
 :root {
   --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-voice: 'Fraunces', Georgia, serif;
@@ -168,7 +172,7 @@
   background: var(--bg-surface-2) !important;
 }
 
-/* -- Sidebar desktop <-> nav mobile -- */
+/* ── Sidebar desktop <-> nav mobile ── */
 .mobile-nav-bar { display: none; }
 
 @media (max-width: 1023px) {
@@ -196,7 +200,7 @@
   100% { transform: translateX(200%); width: 60%; }
 }
 
-/* Impression du CV — masque toute l'UI sauf le CV lui-même */
+/* ── Impression du CV — masque toute l'UI sauf le CV lui-même ── */
 @media print {
   body * { visibility: hidden; }
   #cv-print-area, #cv-print-area * { visibility: visible; }

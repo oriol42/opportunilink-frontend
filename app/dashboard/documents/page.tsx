@@ -9,6 +9,7 @@ import {
   FileText, ChartColumn, CreditCard, ScrollText, Image as ImageIcon, Paperclip,
   Check, X, CloudUpload, FolderOpen, Eye, Trash2, Lightbulb, LoaderCircle, LucideIcon,
 } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface DocumentItem {
   id: string; type: string; file_name: string; file_path: string;
@@ -271,15 +272,8 @@ function DocumentsInner() {
 
               {vault.documents.length === 0 ? (
                 <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-                  padding:"48px 24px", textAlign:"center",
                   boxShadow:"var(--shadow-sm)" }}>
-                  <FolderOpen size={40} color="var(--text-muted)" style={{ margin:"0 auto 12px" }} />
-                  <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)", marginBottom:8 }}>
-                    Coffre-fort vide
-                  </p>
-                  <p style={{ fontSize:13, color:"var(--text-muted)" }}>
-                    Commence par uploader ton CV — c'est le document le plus important.
-                  </p>
+                  <EmptyState variant="documents" />
                 </div>
               ) : (
                 <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",

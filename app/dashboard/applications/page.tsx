@@ -11,6 +11,7 @@ import {
   ClipboardList, CheckCircle, XCircle, Clock,
   Send, Trash2, ExternalLink, MapPin, Calendar, LoaderCircle, Info,
 } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface Application {
   id: string; opportunity_id: string;
@@ -109,13 +110,8 @@ function ApplicationsInner() {
           </div>
         )}
         {!isLoading && apps?.length === 0 && (
-          <div style={{ textAlign:"center", padding:"80px 20px", background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)" }}>
-            <div style={{ width:64, height:64, borderRadius:"50%", background:"var(--bg-success)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
-              <ClipboardList size={26} color="var(--text-success)" />
-            </div>
-            <p style={{ fontWeight:700, fontSize:18, color:"var(--text-primary)", marginBottom:8 }}>Aucune candidature</p>
-            <p style={{ fontSize:14, color:"var(--text-muted)", marginBottom:24 }}>Explore le feed et postule à une opportunité qui te correspond.</p>
-            <Link href="/dashboard" style={{ background:"var(--accent)", color:"#fff", fontWeight:700, fontSize:14, padding:"10px 24px", borderRadius:12, textDecoration:"none" }}>Explorer le feed →</Link>
+          <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)" }}>
+            <EmptyState variant="applications" action={{ label: "Explorer le feed", href: "/dashboard" }} />
           </div>
         )}
         {apps && apps.length > 0 && (

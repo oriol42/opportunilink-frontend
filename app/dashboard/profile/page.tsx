@@ -64,8 +64,8 @@ const SKILL_LEVELS = [
 ];
 
 const inputStyle: React.CSSProperties = {
-  width:"100%", padding:"10px 14px", border:"1px solid var(--border)", borderRadius:12,
-  fontSize:13, background:"var(--bg-input)", color:"var(--text-primary)", outline:"none",
+  width:"100%", padding:"11px 14px", border:"1px solid var(--border)", borderRadius:12,
+  fontSize:14, background:"var(--bg-input)", color:"var(--text-primary)", outline:"none",
   boxSizing:"border-box",
 };
 const labelStyle: React.CSSProperties = {
@@ -75,22 +75,25 @@ const labelStyle: React.CSSProperties = {
 
 function computeEmployabilityScore(form: {
   full_name:string; level:string; field:string; city:string;
-  gpa:string; phone:string; languages:string[]; skills:Record<string,number>;
+  gpa:string; age:string; phone:string; languages:string[]; skills:Record<string,number>;
   objectives:string[];
-}): { score:number; breakdown:{ label:string; val:number; max:number; color:string }[] } {
-  const b = [
-    { label:"Niveau d'études",   val:form.level?20:0,                               max:20, color:"#7c3aed" },
-    { label:"Filière",           val:form.field?15:0,                               max:15, color:"#2563eb" },
-    { label:"Langues",           val:Math.min(form.languages.length*8,20),          max:20, color:"#059669" },
-    { label:"Compétences",       val:Math.min(Object.keys(form.skills).length*3,20),max:20, color:"#f59e0b" },
-    { label:"Moyenne",           val:form.gpa?10:0,                                 max:10, color:"#ec4899" },
-    { label:"Profil complet",    val:(form.full_name?3:0)+(form.city?3:0)+(form.phone?4:0), max:10, color:"#06b6d4" },
-    { label:"Objectifs définis", val:form.objectives.length>0?5:0,                 max:5,  color:"#8b5cf6" },
+}): { score:number; missing:string[] } {
+  const parts = [
+    form.level ? 20:0, form.field ? 15:0, Math.min(form.languages.length*8,20),
+    Math.min(Object.keys(form.skills).length*3,20), form.gpa?10:0,
+    (form.full_name?3:0)+(form.city?3:0)+(form.phone?4:0), form.objectives.length>0?5:0,
   ];
-  return { score: b.reduce((s,x)=>s+x.val,0), breakdown:b };
+  const score = parts.reduce((a,b)=>a+b,0);
+  const missing = [
+    !form.full_name && "Nom complet", !form.level && "Niveau d'études", !form.field && "Filière",
+    !form.age && "Âge", !form.gpa && "Moyenne", !form.city && "Ville", !form.phone && "Téléphone",
+    form.languages.length===0 && "Langues", Object.keys(form.skills).length===0 && "Compétences",
+    form.objectives.length===0 && "Objectifs carrière",
+  ].filter(Boolean) as string[];
+  return { score, missing };
 }
 
-const SECTIONS: { key:string; label:string; icon:LucideIcon }[] = [
+const TABS: { key:string; label:string; icon:LucideIcon }[] = [
   { key:"identity",   label:"Identité",    icon:User },
   { key:"academic",   label:"Académique",  icon:GraduationCap },
   { key:"objectives", label:"Objectifs",   icon:Target },
@@ -98,11 +101,12 @@ const SECTIONS: { key:string; label:string; icon:LucideIcon }[] = [
   { key:"skills",     label:"Compétences", icon:Zap },
   { key:"security",   label:"Sécurité",    icon:Lock },
 ];
-type SectionKey = typeof SECTIONS[number]["key"];
+type TabKey = typeof TABS[number]["key"];
 
 function ProfileInner() {
   const { user, setUser } = useStore();
   const { success, error: toastError } = useToast();
+  const [tab, setTab] = useState<TabKey>("identity");
   const [form, setForm] = useState({
     full_name:  user?.full_name ?? "",
     level:      user?.level ?? "",
@@ -116,8 +120,7 @@ function ProfileInner() {
     objectives: (user?.objectives as string[]) ?? [],
   });
   const [skillInput, setSkillInput] = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [section, setSection]       = useState<SectionKey>("identity");
+  const [loading, setLoading] = useState(false);
 
   const { data: stats } = useQuery({
     queryKey:["my-stats"],
@@ -125,18 +128,8 @@ function ProfileInner() {
     staleTime:60000,
   });
 
-  const { score, breakdown } = computeEmployabilityScore(form);
-  const missing = [
-    !form.full_name && "Nom complet",
-    !form.level     && "Niveau d'études",
-    !form.field     && "Filière",
-    !form.gpa       && "Moyenne",
-    !form.city      && "Ville",
-    !form.phone     && "Téléphone",
-    form.languages.length===0 && "Langues",
-    Object.keys(form.skills).length===0 && "Compétences",
-    form.objectives.length===0 && "Objectifs carrière",
-  ].filter(Boolean) as string[];
+  const { score, missing } = computeEmployabilityScore(form);
+  const scoreColor = score>=80?"var(--accent)":score>=60?"var(--text-warning)":score>=40?"#f97316":"var(--text-danger)";
 
   function toggleLang(code:string) {
     setForm(f=>({...f, languages:f.languages.includes(code)?f.languages.filter(l=>l!==code):[...f.languages,code]}));
@@ -157,8 +150,8 @@ function ProfileInner() {
 
   const suggestedSkills = (SKILLS_BY_FIELD[form.field]??[]).filter(s=>!(s in form.skills));
 
-  async function save(e:React.FormEvent) {
-    e.preventDefault(); setLoading(true);
+  async function save() {
+    setLoading(true);
     try {
       const res = await api.put("/users/me",{
         ...form, gpa: form.gpa ? parseFloat(form.gpa) : null,
@@ -171,451 +164,321 @@ function ProfileInner() {
     } finally { setLoading(false); }
   }
 
-  const scoreColor = score>=80?"var(--accent)":score>=60?"var(--text-warning)":score>=40?"#f97316":"var(--text-danger)";
-  const scoreLabel = score>=80?"Excellent":score>=60?"Bon":score>=40?"Moyen":"Incomplet";
+  const initials = form.full_name ? form.full_name.split(" ").map(n=>n[0]).slice(0,2).join("").toUpperCase() : "?";
 
   return (
-    <div style={{ height:"100%", display:"flex", flexDirection:"column", overflow:"hidden" }}>
-      <div style={{ background:"var(--bg-card)", borderBottom:"1px solid var(--border-subtle)", padding:"18px 24px", flexShrink:0 }}>
-        <h1 style={{ fontFamily:"var(--font-voice)", fontWeight:500, fontSize:22, color:"var(--text-primary)", marginBottom:4 }}>Mon ADN Carrière</h1>
-        <p style={{ fontSize:13, color:"var(--text-muted)" }}>Ton profil intelligent — plus il est complet, plus tes recommandations sont précises.</p>
-      </div>
+    <div style={{ height:"100%", overflowY:"auto", background:"var(--bg-base)" }}>
+      <div style={{ maxWidth: 880, margin: "0 auto", padding: "20px 20px 60px" }}>
 
-      <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
-        <form onSubmit={save}>
-          <div className="profile-grid" style={{ display:"grid", gridTemplateColumns:"300px 1fr", gap:24, alignItems:"start" }}>
+        <div style={{ background:"var(--bg-hero)", borderRadius:20, padding:"22px 24px", marginBottom:16,
+          display:"flex", alignItems:"center", gap:18, flexWrap:"wrap", position:"relative", overflow:"hidden" }}>
+          <div style={{ position:"absolute", top:-40, right:-40, width:180, height:180,
+            background:"radial-gradient(circle,rgba(16,185,129,.15) 0%,transparent 70%)", pointerEvents:"none" }} />
 
-            <div style={{ display:"flex", flexDirection:"column", gap:16, position:"sticky", top:0 }}>
+          <div style={{ width:64, height:64, borderRadius:"50%", flexShrink:0,
+            background:"linear-gradient(135deg,var(--accent),var(--accent-dark))",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:22, fontWeight:700, color:"#fff", border:"2px solid rgba(16,185,129,.4)", zIndex:1 }}>
+            {initials}
+          </div>
 
-              <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-                overflow:"hidden", boxShadow:"var(--shadow-md)" }}>
+          <div style={{ flex:1, minWidth:180, zIndex:1 }}>
+            <p style={{ fontFamily:"var(--font-voice)", fontWeight:500, fontSize:19, color:"#fff", marginBottom:2 }}>
+              {form.full_name || "Ton nom"}
+            </p>
+            <p style={{ fontSize:12.5, color:"#a7f3d0" }}>
+              {form.level||"Niveau"} · {form.field||"Filière"}{user?.email ? ` · ${user.email}` : ""}
+            </p>
+          </div>
 
-                <div style={{ background:`linear-gradient(135deg, ${scoreColor}18, ${scoreColor}08)`,
-                  borderBottom:`1px solid ${scoreColor}30`,
-                  padding:"22px 20px 18px", textAlign:"center" }}>
-                  {(()=>{
-                    const size=90; const r=37; const circ=2*Math.PI*r;
-                    const dash=(score/100)*circ;
+          <div style={{ display:"flex", alignItems:"center", gap:10, zIndex:1 }}>
+            {(() => {
+              const size=58; const r=24; const circ=2*Math.PI*r; const dash=(score/100)*circ;
+              return (
+                <div style={{ position:"relative" }}>
+                  <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
+                    <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,.15)" strokeWidth={5} />
+                    <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={scoreColor} strokeWidth={5}
+                      strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{ transition:"stroke-dasharray .6s" }} />
+                  </svg>
+                  <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{score}</span>
+                  </div>
+                </div>
+              );
+            })()}
+            <div>
+              <p style={{ fontSize:11, color:"#a7f3d0", fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Profil</p>
+              <p style={{ fontSize:13, fontWeight:600, color:"#fff" }}>{score}/100</p>
+            </div>
+          </div>
+        </div>
+
+        {missing.length>0 && (
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:16 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:"var(--text-danger)", display:"flex", alignItems:"center", gap:4,
+              padding:"4px 2px" }}><TriangleAlert size={12} /> À compléter :</span>
+            {missing.map(m => (
+              <span key={m} style={{ fontSize:11, fontWeight:600, color:"var(--text-danger)",
+                background:"var(--bg-danger)", border:"1px solid var(--border-danger)",
+                padding:"3px 10px", borderRadius:20 }}>{m}</span>
+            ))}
+          </div>
+        )}
+
+        {stats && (
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))", gap:10, marginBottom:20 }}>
+            {[
+              { val:stats.applications?.total??0, label:"Candidatures" },
+              { val:stats.saved_count??0, label:"Favoris" },
+            ].map(s => (
+              <div key={s.label} style={{ background:"var(--bg-card)", border:"1px solid var(--border)",
+                borderRadius:14, padding:"12px 14px", textAlign:"center" }}>
+                <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:20, color:"var(--text-primary)" }}>{s.val}</p>
+                <p style={{ fontSize:11, color:"var(--text-muted)", fontWeight:600, marginTop:2 }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display:"flex", flexWrap:"wrap", gap:6, background:"var(--bg-card)",
+          border:"1px solid var(--border)", borderRadius:14, padding:6, marginBottom:16 }}>
+          {TABS.map(t => {
+            const active = tab===t.key;
+            return (
+              <button key={t.key} onClick={()=>setTab(t.key)} style={{
+                flex:"1 1 auto", minWidth:100, display:"flex", alignItems:"center", justifyContent:"center", gap:7,
+                padding:"10px 12px", borderRadius:10, border:"none", cursor:"pointer",
+                fontWeight:600, fontSize:12.5, transition:"all .15s",
+                background: active ? "var(--text-primary)" : "transparent",
+                color: active ? "var(--bg-card)" : "var(--text-muted)" }}>
+                <t.icon size={14} />{t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
+          padding:24, boxShadow:"var(--shadow-sm)" }}>
+
+          {tab==="identity" && (
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              <div>
+                <label style={labelStyle}>Nom complet *</label>
+                <input type="text" value={form.full_name} onChange={e=>setForm({...form,full_name:e.target.value})}
+                  style={inputStyle} placeholder="Jean Dupont" />
+              </div>
+              <div>
+                <label style={labelStyle}>Email</label>
+                <input type="email" value={user?.email??""} disabled
+                  style={{ ...inputStyle, background:"var(--bg-surface-2)", color:"var(--text-muted)" }} />
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12 }}>
+                <div>
+                  <label style={labelStyle}>Ville</label>
+                  <input type="text" value={form.city} onChange={e=>setForm({...form,city:e.target.value})}
+                    style={inputStyle} placeholder="Yaoundé" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Téléphone</label>
+                  <input type="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}
+                    style={inputStyle} placeholder="+237 6XX XXX XXX" />
+                </div>
+              </div>
+              <div style={{ background:"var(--bg-success)", borderRadius:12, padding:"12px 14px",
+                border:"1px solid var(--border-success)", display:"flex", gap:10 }}>
+                <Smartphone size={16} color="var(--text-success)" style={{ flexShrink:0, marginTop:1 }} />
+                <p style={{ fontSize:12, color:"var(--text-success)", lineHeight:1.5 }}>
+                  Le téléphone active les alertes 7 jours et 1 jour avant chaque deadline.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {tab==="academic" && (
+            <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+              <div>
+                <label style={{ ...labelStyle, marginBottom:10 }}>Niveau d'études *</label>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:8 }}>
+                  {LEVELS.map(l=>(
+                    <button key={l} type="button" onClick={()=>setForm({...form,level:l})}
+                      style={{ padding:"11px 14px", borderRadius:12, border:"2px solid",
+                        borderColor:form.level===l?"#7c3aed":"var(--border)",
+                        background:form.level===l?"rgba(124,58,237,.1)":"var(--bg-surface-2)",
+                        color:form.level===l?"#7c3aed":"var(--text-secondary)",
+                        fontWeight:700, fontSize:12.5, cursor:"pointer", transition:"all .15s",
+                        display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      {l}{form.level===l&&<Check size={13} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Filière *</label>
+                <select value={form.field} onChange={e=>setForm({...form,field:e.target.value})}
+                  style={{ ...inputStyle, cursor:"pointer" }}>
+                  <option value="">Sélectionner ta filière</option>
+                  {FIELDS.map(f=><option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:16 }}>
+                <div>
+                  <label style={labelStyle}>Moyenne / 20</label>
+                  <div style={{ position:"relative" }}>
+                    <input type="number" min="0" max="20" step="0.1" value={form.gpa}
+                      onChange={e=>setForm({...form,gpa:e.target.value})}
+                      style={{ ...inputStyle, paddingRight:44 }} placeholder="14.5" />
+                    <span style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
+                      fontSize:12, color:"var(--text-muted)", fontWeight:700 }}>/20</span>
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Âge</label>
+                  <div style={{ position:"relative" }}>
+                    <input type="number" min="14" max="100" value={form.age}
+                      onChange={e=>setForm({...form,age:e.target.value})}
+                      style={{ ...inputStyle, paddingRight:40 }} placeholder="22" />
+                    <span style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
+                      fontSize:12, color:"var(--text-muted)", fontWeight:700 }}>ans</span>
+                  </div>
+                </div>
+              </div>
+              {form.gpa && (
+                <p style={{ fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:5, marginTop:-8,
+                  color:parseFloat(form.gpa)>=14?"var(--text-success)":parseFloat(form.gpa)>=12?"var(--text-warning)":"var(--text-danger)" }}>
+                  {parseFloat(form.gpa)>=16 ? <><Sparkles size={12}/>Excellent</> : parseFloat(form.gpa)>=14 ? <><Check size={12}/>Très bien</> : parseFloat(form.gpa)>=12 ? <><ThumbsUp size={12}/>Bien</> : "Passable"}
+                </p>
+              )}
+            </div>
+          )}
+
+          {tab==="objectives" && (
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {OBJECTIVES.map(obj=>{
+                const selected = form.objectives.includes(obj.key);
+                return (
+                  <button key={obj.key} type="button" onClick={()=>toggleObjective(obj.key)}
+                    style={{ display:"flex", alignItems:"center", gap:14, padding:"15px 16px",
+                      borderRadius:14, border:"2px solid",
+                      borderColor:selected?"var(--accent)":"var(--border)",
+                      background:selected?"var(--bg-success)":"var(--bg-surface-2)",
+                      cursor:"pointer", transition:"all .15s", textAlign:"left" }}>
+                    <div style={{ width:38, height:38, borderRadius:10, flexShrink:0,
+                      background:selected?"var(--accent)":"var(--bg-input)",
+                      display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <obj.icon size={17} color={selected?"#fff":"var(--text-muted)"} />
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <p style={{ fontWeight:700, fontSize:13.5, color:selected?"var(--text-success)":"var(--text-primary)", marginBottom:2 }}>{obj.label}</p>
+                      <p style={{ fontSize:11.5, color:"var(--text-muted)" }}>{obj.desc}</p>
+                    </div>
+                    {selected&&<Check size={17} color="var(--accent)" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {tab==="languages" && (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:10 }}>
+              {MAIN_LANGS.map(({code,flag,label})=>{
+                const selected = form.languages.includes(code);
+                return (
+                  <button key={code} type="button" onClick={()=>toggleLang(code)}
+                    style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px",
+                      borderRadius:12, border:"2px solid",
+                      borderColor:selected?"var(--accent)":"var(--border)",
+                      background:selected?"var(--bg-success)":"var(--bg-card)",
+                      cursor:"pointer", transition:"all .15s" }}>
+                    <span style={{ fontSize:19 }}>{flag}</span>
+                    <span style={{ flex:1, fontWeight:700, fontSize:12.5, textAlign:"left",
+                      color:selected?"var(--text-success)":"var(--text-secondary)" }}>{label}</span>
+                    {selected&&<Check size={14} color="var(--accent)" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {tab==="skills" && (
+            <div>
+              {suggestedSkills.length>0&&(
+                <div style={{ marginBottom:18 }}>
+                  <p style={{ ...labelStyle, marginBottom:10 }}>Suggestions pour {form.field||"ta filière"}</p>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
+                    {suggestedSkills.slice(0,12).map(s=>(
+                      <button key={s} type="button" onClick={()=>addSkill(s,50)}
+                        style={{ fontSize:11.5, fontWeight:600, color:"var(--accent-dark)",
+                          background:"var(--bg-success)", border:"1px solid var(--border-success)",
+                          borderRadius:20, padding:"5px 12px", cursor:"pointer",
+                          display:"flex", alignItems:"center", gap:3 }}>
+                        <Plus size={11} />{s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div style={{ display:"flex", gap:8, marginBottom:18 }}>
+                <input type="text" value={skillInput} onChange={e=>setSkillInput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&(e.preventDefault(),addSkill(skillInput))}
+                  placeholder="Ajouter une compétence..." style={{ ...inputStyle, flex:1 }} />
+                <button type="button" onClick={()=>addSkill(skillInput)}
+                  style={{ padding:"10px 16px", background:"var(--bg-success)", border:"1px solid var(--border-success)",
+                    borderRadius:12, color:"var(--accent-dark)", cursor:"pointer",
+                    display:"flex", alignItems:"center", justifyContent:"center" }}><Plus size={16} /></button>
+              </div>
+              {Object.keys(form.skills).length>0?(
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  {Object.entries(form.skills).map(([name,level])=>{
+                    const lvlConfig = SKILL_LEVELS.find(l=>level<=l.val)||SKILL_LEVELS[3];
                     return (
-                      <div style={{ position:"relative", display:"inline-block", marginBottom:10 }}>
-                        <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
-                          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--border)" strokeWidth={6} />
-                          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={scoreColor} strokeWidth={6}
-                            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-                            style={{ transition:"stroke-dasharray .8s ease" }} />
-                        </svg>
-                        <div style={{ position:"absolute", inset:0, display:"flex",
-                          flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-                          <div style={{ width:48, height:48, borderRadius:"50%",
-                            background:`linear-gradient(135deg,${scoreColor},${scoreColor}bb)`,
-                            display:"flex", alignItems:"center", justifyContent:"center",
-                            fontSize:16, fontWeight:700, color:"#fff",
-                            boxShadow:`0 3px 12px ${scoreColor}50` }}>
-                            {form.full_name?form.full_name.split(" ").map(n=>n[0]).slice(0,2).join("").toUpperCase():"?"}
+                      <div key={name} style={{ background:"var(--bg-surface-2)", borderRadius:14,
+                        padding:"12px 14px", border:"1px solid var(--border-subtle)" }}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                          <p style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>{name}</p>
+                          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                            <span style={{ fontSize:11, fontWeight:700, color:lvlConfig.color,
+                              background:`${lvlConfig.color}18`, padding:"2px 9px", borderRadius:20 }}>{lvlConfig.label}</span>
+                            <button type="button" onClick={()=>removeSkill(name)}
+                              style={{ color:"var(--text-muted)", background:"none", border:"none", cursor:"pointer", display:"flex" }}><X size={14} /></button>
                           </div>
+                        </div>
+                        <div style={{ display:"flex", gap:4 }}>
+                          {SKILL_LEVELS.map(sl=>(
+                            <button key={sl.val} type="button" onClick={()=>updateSkillLevel(name,sl.val)}
+                              style={{ flex:1, padding:"5px 0", borderRadius:8, border:"none",
+                                cursor:"pointer", fontSize:10, fontWeight:700, transition:"all .15s",
+                                background:level===sl.val?sl.color:level>sl.val-1?`${sl.color}30`:"var(--border)",
+                                color:level===sl.val?"#fff":level>sl.val-1?sl.color:"var(--text-muted)" }}>{sl.label}</button>
+                          ))}
                         </div>
                       </div>
                     );
-                  })()}
-                  <p style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)", marginBottom:2 }}>
-                    {form.full_name||"Ton nom"}
-                  </p>
-                  <p style={{ fontSize:11, color:"var(--text-muted)", marginBottom:10 }}>
-                    {form.level||"Niveau"} · {form.field||"Filière"}
-                  </p>
-                  {user?.email && (
-                    <p style={{ fontSize:11, color:"var(--text-muted)", marginBottom:10, wordBreak:"break-all" }}>
-                      {user.email}
-                    </p>
-                  )}
-                  <div style={{ display:"inline-flex", alignItems:"center", gap:6,
-                    background:`${scoreColor}18`, border:`1px solid ${scoreColor}35`,
-                    borderRadius:20, padding:"5px 14px" }}>
-                    <div style={{ width:6, height:6, borderRadius:"50%", background:scoreColor }} />
-                    <span style={{ fontSize:12, fontWeight:700, color:scoreColor }}>{score}/100</span>
-                    <span style={{ fontSize:11, color:"var(--text-muted)" }}>· {scoreLabel}</span>
-                  </div>
+                  })}
                 </div>
-
-                <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:8 }}>
-                  {breakdown.map(b=>(
-                    <div key={b.label}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                        <span style={{ fontSize:11, color:"var(--text-secondary)", fontWeight:500 }}>{b.label}</span>
-                        {b.val===b.max
-                          ? <Check size={12} color={b.color} strokeWidth={3} />
-                          : <span style={{ fontSize:10, fontWeight:600, color:b.val>0?"var(--text-muted)":"var(--border)" }}>
-                              {b.val>0 ? `${Math.round((b.val/b.max)*100)}%` : "—"}
-                            </span>
-                        }
-                      </div>
-                      <div style={{ height:4, background:"var(--border)", borderRadius:3, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${(b.val/b.max)*100}%`,
-                          background:b.val>0?b.color:"transparent",
-                          borderRadius:3, transition:"width .5s ease" }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {stats&&(
-                  <div style={{ borderTop:"1px solid var(--border-subtle)",
-                    display:"grid", gridTemplateColumns:"1fr 1fr" }}>
-                    {[
-                      { val:stats.applications?.total??0, label:"Candidatures", color:"#3b82f6", bg:"var(--bg-surface-2)" },
-                      { val:stats.saved_count??0, label:"Favoris", color:"var(--text-warning)", bg:"var(--bg-surface-2)" },
-                    ].map((s,i)=>(
-                      <div key={s.label} style={{ padding:"12px 10px", textAlign:"center",
-                        borderRight:i===0?"1px solid var(--border-subtle)":"none",
-                        background:s.bg }}>
-                        <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:18, color:s.color, lineHeight:1 }}>{s.val}</p>
-                        <p style={{ fontSize:10, color:"var(--text-muted)", marginTop:3, fontWeight:500 }}>{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {missing.length>0&&(
-                <div style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border-danger)",
-                  padding:"14px", boxShadow:"var(--shadow-sm)" }}>
-                  <p style={{ fontSize:11, fontWeight:700, color:"var(--text-danger)",
-                    textTransform:"uppercase", letterSpacing:".06em", marginBottom:8,
-                    display:"flex", alignItems:"center", gap:5 }}>
-                    <TriangleAlert size={12} /> À compléter
-                  </p>
-                  <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-                    {missing.slice(0,5).map(m=>(
-                      <div key={m} style={{ display:"flex", gap:8, alignItems:"center",
-                        background:"var(--bg-danger)", borderRadius:10, padding:"6px 10px" }}>
-                        <div style={{ width:5, height:5, borderRadius:"50%", background:"var(--text-danger)", flexShrink:0 }} />
-                        <span style={{ fontSize:12, fontWeight:600, color:"var(--text-danger)" }}>{m}</span>
-                      </div>
-                    ))}
-                  </div>
+              ):(
+                <div style={{ textAlign:"center", padding:"28px 0", color:"var(--text-muted)" }}>
+                  <Zap size={28} style={{ marginBottom:8, opacity:.5 }} />
+                  <p style={{ fontSize:13, fontWeight:600 }}>Aucune compétence ajoutée</p>
                 </div>
               )}
-
-              <div style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)",
-                padding:"8px", boxShadow:"var(--shadow-sm)" }}>
-                {SECTIONS.map(s=>{
-                  const active = section===s.key;
-                  return (
-                    <button key={s.key} type="button" onClick={()=>setSection(s.key)}
-                      style={{ width:"100%", display:"flex", alignItems:"center", gap:10,
-                        padding:"10px 12px", borderRadius:12, border:"none", cursor:"pointer",
-                        marginBottom:2, transition:"all .15s",
-                        background:active?"var(--text-primary)":"transparent",
-                        color:active?"var(--bg-card)":"var(--text-secondary)" }}>
-                      <s.icon size={16} />
-                      <span style={{ flex:1, fontSize:13, fontWeight:700, textAlign:"left" }}>{s.label}</span>
-                      {active&&<span style={{ fontSize:13, color:"var(--accent)" }}>→</span>}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button type="submit" disabled={loading}
-                style={{ width:"100%", background:loading?"var(--border)":"linear-gradient(135deg,var(--accent),#0d9488)",
-                  color:"#fff", fontWeight:700, fontSize:14, padding:"14px 0",
-                  borderRadius:14, border:"none", cursor:loading?"not-allowed":"pointer",
-                  boxShadow:loading?"none":"0 4px 16px rgba(5,150,105,0.3)",
-                  display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-                {loading ? <LoaderCircle size={16} className="spin" /> : <Save size={16} />}
-                {loading?"Enregistrement...":"Sauvegarder le profil"}
-              </button>
             </div>
+          )}
 
-            <div>
-              {section==="identity"&&(
-                <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-                  padding:28, boxShadow:"var(--shadow-sm)" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:"var(--bg-success)",
-                      display:"flex", alignItems:"center", justifyContent:"center" }}><User size={19} color="var(--text-success)" /></div>
-                    <div>
-                      <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>Identité</p>
-                      <p style={{ fontSize:12, color:"var(--text-muted)" }}>Informations personnelles de base</p>
-                    </div>
-                  </div>
-                  <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-                    <div>
-                      <label style={labelStyle}>Nom complet *</label>
-                      <input type="text" value={form.full_name}
-                        onChange={e=>setForm({...form,full_name:e.target.value})}
-                        style={inputStyle} placeholder="Jean Dupont" />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>Email</label>
-                      <input type="email" value={user?.email??""} disabled
-                        style={{ ...inputStyle, background:"var(--bg-surface-2)", color:"var(--text-muted)" }} />
-                    </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                      <div>
-                        <label style={labelStyle}>Ville</label>
-                        <input type="text" value={form.city}
-                          onChange={e=>setForm({...form,city:e.target.value})}
-                          style={inputStyle} placeholder="Yaoundé" />
-                      </div>
-                      <div>
-                        <label style={labelStyle}>Téléphone</label>
-                        <input type="tel" value={form.phone}
-                          onChange={e=>setForm({...form,phone:e.target.value})}
-                          style={inputStyle} placeholder="+237 6XX XXX XXX" />
-                      </div>
-                    </div>
-                    <div style={{ background:"var(--bg-success)", borderRadius:12, padding:"12px 14px",
-                      border:"1px solid var(--border-success)", display:"flex", gap:10 }}>
-                      <Smartphone size={16} color="var(--text-success)" style={{ flexShrink:0, marginTop:1 }} />
-                      <p style={{ fontSize:12, color:"var(--text-success)", lineHeight:1.5 }}>
-                        Le téléphone active les alertes 7 jours et 1 jour avant chaque deadline.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+          {tab==="security" && <SecuritySection />}
+        </div>
 
-              {section==="academic"&&(
-                <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-                  padding:28, boxShadow:"var(--shadow-sm)" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:"rgba(124,58,237,.12)",
-                      display:"flex", alignItems:"center", justifyContent:"center" }}><GraduationCap size={19} color="#7c3aed" /></div>
-                    <div>
-                      <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>Parcours académique</p>
-                      <p style={{ fontSize:12, color:"var(--text-muted)" }}>Détermine 65% de ton score de matching</p>
-                    </div>
-                  </div>
-                  <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
-                    <div>
-                      <label style={{ ...labelStyle, marginBottom:10 }}>Niveau d'études *</label>
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:8 }}>
-                        {LEVELS.map(l=>(
-                          <button key={l} type="button" onClick={()=>setForm({...form,level:l})}
-                            style={{ padding:"12px 14px", borderRadius:12, border:"2px solid",
-                              borderColor:form.level===l?"#7c3aed":"var(--border)",
-                              background:form.level===l?"rgba(124,58,237,.1)":"var(--bg-surface-2)",
-                              color:form.level===l?"#7c3aed":"var(--text-secondary)",
-                              fontWeight:700, fontSize:13, cursor:"pointer", transition:"all .15s",
-                              display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                            {l}{form.level===l&&<Check size={14} />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label style={labelStyle}>Filière *</label>
-                      <select value={form.field} onChange={e=>setForm({...form,field:e.target.value})}
-                        style={{ ...inputStyle, cursor:"pointer" }}>
-                        <option value="">Sélectionner ta filière</option>
-                        {FIELDS.map(f=><option key={f} value={f}>{f}</option>)}
-                      </select>
-                    </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-                      <div>
-                        <label style={labelStyle}>Moyenne / 20</label>
-                        <div style={{ position:"relative" }}>
-                          <input type="number" min="0" max="20" step="0.01" value={form.gpa}
-                            onChange={e=>setForm({...form,gpa:e.target.value})}
-                            style={{ ...inputStyle, paddingRight:60 }} placeholder="Ex: 14.5" />
-                          <span style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
-                            fontSize:12, color:"var(--text-muted)", fontWeight:700 }}>/20</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label style={labelStyle}>Age</label>
-                        <div style={{ position:"relative" }}>
-                          <input type="number" min="14" max="100" value={form.age}
-                            onChange={e=>setForm({...form,age:e.target.value})}
-                            style={{ ...inputStyle, paddingRight:44 }} placeholder="Ex: 22" />
-                          <span style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
-                            fontSize:12, color:"var(--text-muted)", fontWeight:700 }}>ans</span>
-                        </div>
-                      </div>
-                    </div>
-                    {form.gpa&&(
-                        <div style={{ marginTop:8 }}>
-                          <div style={{ height:6, background:"var(--border)", borderRadius:3, overflow:"hidden" }}>
-                            <div style={{ height:"100%", borderRadius:3, transition:"width .5s",
-                              width:`${(parseFloat(form.gpa)/20)*100}%`,
-                              background:parseFloat(form.gpa)>=14?"var(--accent)":parseFloat(form.gpa)>=12?"var(--text-warning)":"var(--text-danger)" }} />
-                          </div>
-                          <p style={{ fontSize:11, fontWeight:700, marginTop:4, display:"flex", alignItems:"center", gap:4,
-                            color:parseFloat(form.gpa)>=14?"var(--text-success)":parseFloat(form.gpa)>=12?"var(--text-warning)":"var(--text-danger)" }}>
-                            {parseFloat(form.gpa)>=16 ? <><Sparkles size={12}/>Excellent</> : parseFloat(form.gpa)>=14 ? <><Check size={12}/>Très bien</> : parseFloat(form.gpa)>=12 ? <><ThumbsUp size={12}/>Bien</> : "Passable"}
-                          </p>
-                        </div>
-                      )}
-                  </div>
-                </div>
-              )}
-
-              {section==="objectives"&&(
-                <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-                  padding:28, boxShadow:"var(--shadow-sm)" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:"var(--bg-warning)",
-                      display:"flex", alignItems:"center", justifyContent:"center" }}><Target size={19} color="var(--text-warning)" /></div>
-                    <div>
-                      <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>Objectifs carrière</p>
-                      <p style={{ fontSize:12, color:"var(--text-muted)" }}>Sélectionne tout ce qui te correspond</p>
-                    </div>
-                  </div>
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {OBJECTIVES.map(obj=>{
-                      const selected = form.objectives.includes(obj.key);
-                      return (
-                        <button key={obj.key} type="button" onClick={()=>toggleObjective(obj.key)}
-                          style={{ display:"flex", alignItems:"center", gap:14, padding:"16px 18px",
-                            borderRadius:16, border:"2px solid",
-                            borderColor:selected?"var(--accent)":"var(--border)",
-                            background:selected?"var(--bg-success)":"var(--bg-surface-2)",
-                            cursor:"pointer", transition:"all .15s", textAlign:"left" }}>
-                          <div style={{ width:40, height:40, borderRadius:11, flexShrink:0,
-                            background:selected?"var(--accent)":"var(--bg-input)",
-                            display:"flex", alignItems:"center", justifyContent:"center" }}>
-                            <obj.icon size={18} color={selected?"#fff":"var(--text-muted)"} />
-                          </div>
-                          <div style={{ flex:1 }}>
-                            <p style={{ fontWeight:700, fontSize:14, color:selected?"var(--text-success)":"var(--text-primary)", marginBottom:2 }}>{obj.label}</p>
-                            <p style={{ fontSize:12, color:"var(--text-muted)" }}>{obj.desc}</p>
-                          </div>
-                          {selected&&<Check size={18} color="var(--accent)" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {form.objectives.length>0&&(
-                    <div style={{ marginTop:16, background:"var(--bg-success)", borderRadius:12,
-                      padding:"12px 14px", border:"1px solid var(--border-success)", display:"flex", alignItems:"center", gap:7 }}>
-                      <Target size={13} color="var(--text-success)" />
-                      <p style={{ fontSize:12, color:"var(--text-success)" }}>
-                        <strong>{form.objectives.length} objectif{form.objectives.length>1?"s":""}</strong> — ton feed sera priorisé en conséquence.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {section==="languages"&&(
-                <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-                  padding:28, boxShadow:"var(--shadow-sm)" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:"rgba(59,130,246,.12)",
-                      display:"flex", alignItems:"center", justifyContent:"center" }}><LanguagesIcon size={19} color="#3b82f6" /></div>
-                    <div>
-                      <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>Langues maîtrisées</p>
-                      <p style={{ fontSize:12, color:"var(--text-muted)" }}>Langues dans lesquelles tu peux postuler</p>
-                    </div>
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
-                    {MAIN_LANGS.map(({code,flag,label})=>{
-                      const selected = form.languages.includes(code);
-                      return (
-                        <button key={code} type="button" onClick={()=>toggleLang(code)}
-                          style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 16px",
-                            borderRadius:14, border:"2px solid",
-                            borderColor:selected?"var(--accent)":"var(--border)",
-                            background:selected?"var(--bg-success)":"var(--bg-card)",
-                            cursor:"pointer", transition:"all .15s" }}>
-                          <span style={{ fontSize:22 }}>{flag}</span>
-                          <div style={{ flex:1, textAlign:"left" }}>
-                            <p style={{ fontWeight:700, fontSize:14, color:selected?"var(--text-success)":"var(--text-secondary)" }}>{label}</p>
-                          </div>
-                          {selected&&<Check size={16} color="var(--accent)" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {section==="skills"&&(
-                <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-                  padding:28, boxShadow:"var(--shadow-sm)" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:"var(--bg-warning)",
-                      display:"flex", alignItems:"center", justifyContent:"center" }}><Zap size={19} color="var(--text-warning)" /></div>
-                    <div>
-                      <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>Compétences avec niveau</p>
-                      <p style={{ fontSize:12, color:"var(--text-muted)" }}>Évalue honnêtement ton niveau pour chaque skill</p>
-                    </div>
-                  </div>
-                  {suggestedSkills.length>0&&(
-                    <div style={{ marginBottom:20 }}>
-                      <p style={{ ...labelStyle, marginBottom:10 }}>Suggestions pour {form.field||"ta filière"}</p>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
-                        {suggestedSkills.slice(0,12).map(s=>(
-                          <button key={s} type="button" onClick={()=>addSkill(s,50)}
-                            style={{ fontSize:12, fontWeight:600, color:"var(--accent-dark)",
-                              background:"var(--bg-success)", border:"1px solid var(--border-success)",
-                              borderRadius:20, padding:"5px 12px", cursor:"pointer",
-                              display:"flex", alignItems:"center", gap:3 }}>
-                            <Plus size={11} />{s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div style={{ display:"flex", gap:8, marginBottom:20 }}>
-                    <input type="text" value={skillInput}
-                      onChange={e=>setSkillInput(e.target.value)}
-                      onKeyDown={e=>e.key==="Enter"&&(e.preventDefault(),addSkill(skillInput))}
-                      placeholder="Ajouter une compétence..."
-                      style={{ ...inputStyle, flex:1 }} />
-                    <button type="button" onClick={()=>addSkill(skillInput)}
-                      style={{ padding:"10px 16px", background:"var(--bg-success)", border:"1px solid var(--border-success)",
-                        borderRadius:12, color:"var(--accent-dark)", cursor:"pointer",
-                        display:"flex", alignItems:"center", justifyContent:"center" }}><Plus size={16} /></button>
-                  </div>
-                  {Object.keys(form.skills).length>0?(
-                    <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                      {Object.entries(form.skills).map(([name,level])=>{
-                        const lvlConfig = SKILL_LEVELS.find(l=>level<=l.val)||SKILL_LEVELS[3];
-                        return (
-                          <div key={name} style={{ background:"var(--bg-surface-2)", borderRadius:14,
-                            padding:"12px 14px", border:"1px solid var(--border-subtle)" }}>
-                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                              <p style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>{name}</p>
-                              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                                <span style={{ fontSize:11, fontWeight:700, color:lvlConfig.color,
-                                  background:`${lvlConfig.color}18`, padding:"2px 9px", borderRadius:20 }}>
-                                  {lvlConfig.label}
-                                </span>
-                                <button type="button" onClick={()=>removeSkill(name)}
-                                  style={{ color:"var(--text-muted)", background:"none",
-                                    border:"none", cursor:"pointer", display:"flex" }}><X size={14} /></button>
-                              </div>
-                            </div>
-                            <div style={{ display:"flex", gap:4 }}>
-                              {SKILL_LEVELS.map(sl=>(
-                                <button key={sl.val} type="button" onClick={()=>updateSkillLevel(name,sl.val)}
-                                  style={{ flex:1, padding:"5px 0", borderRadius:8, border:"none",
-                                    cursor:"pointer", fontSize:10, fontWeight:700, transition:"all .15s",
-                                    background:level===sl.val?sl.color:level>sl.val-1?`${sl.color}30`:"var(--border)",
-                                    color:level===sl.val?"#fff":level>sl.val-1?sl.color:"var(--text-muted)" }}>
-                                  {sl.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ):(
-                    <div style={{ textAlign:"center", padding:"32px 0", color:"var(--text-muted)" }}>
-                      <Zap size={30} style={{ marginBottom:8, opacity:.5 }} />
-                      <p style={{ fontSize:13, fontWeight:600 }}>Aucune compétence ajoutée</p>
-                      <p style={{ fontSize:11, marginTop:4 }}>Utilise les suggestions ci-dessus</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {section==="security"&&<SecuritySection />}
-            </div>
-          </div>
-        </form>
+        {tab!=="security" && (
+          <button onClick={save} disabled={loading} style={{
+            width:"100%", marginTop:16, padding:"15px 0", borderRadius:14, border:"none",
+            background:loading?"var(--border)":"linear-gradient(135deg,var(--accent),#0d9488)",
+            color:"#fff", fontWeight:700, fontSize:14, cursor:loading?"not-allowed":"pointer",
+            boxShadow:loading?"none":"0 4px 16px rgba(5,150,105,0.3)",
+            display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            {loading ? <LoaderCircle size={16} className="spin" /> : <Save size={16} />}
+            {loading?"Enregistrement...":"Sauvegarder le profil"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -644,17 +507,16 @@ function SecuritySection() {
   }
 
   return (
-    <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
-      padding:28, boxShadow:"var(--shadow-sm)" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-        <div style={{ width:40, height:40, borderRadius:12, background:"var(--bg-danger)",
-          display:"flex", alignItems:"center", justifyContent:"center" }}><Lock size={19} color="var(--text-danger)" /></div>
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+        <div style={{ width:38, height:38, borderRadius:10, background:"var(--bg-danger)",
+          display:"flex", alignItems:"center", justifyContent:"center" }}><Lock size={17} color="var(--text-danger)" /></div>
         <div>
-          <p style={{ fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>Sécurité du compte</p>
-          <p style={{ fontSize:12, color:"var(--text-muted)" }}>Change ton mot de passe régulièrement</p>
+          <p style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)" }}>Sécurité du compte</p>
+          <p style={{ fontSize:11.5, color:"var(--text-muted)" }}>Change ton mot de passe régulièrement</p>
         </div>
       </div>
-      <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16, maxWidth:420 }}>
+      <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:420 }}>
         <div>
           <label style={labelStyle}>Mot de passe actuel</label>
           <input type={show?"text":"password"} value={current} onChange={e=>setCurrent(e.target.value)}

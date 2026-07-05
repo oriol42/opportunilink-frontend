@@ -21,6 +21,7 @@ export interface OpportunityLite {
   required_fields?: string[];
   required_level?: string[];
   required_languages?: string[];
+  min_gpa?: number | null;
 }
 
 export interface UserLite {

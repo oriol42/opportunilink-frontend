@@ -14,7 +14,7 @@ import {
   ArrowLeft, ShieldCheck, Flame, Globe, CalendarClock, FileText, Mail,
   GraduationCap, Link2, X, PartyPopper, ListChecks, Percent, Clock,
   SearchX, ExternalLink, Copy, Check, LucideIcon, Languages as LanguagesIcon,
-  LoaderCircle, MessageSquareText, FolderOpen, ChevronRight,
+  LoaderCircle, MessageSquareText, FolderOpen, ChevronRight, Sparkles, Compass,
 } from "lucide-react";
 import { typeConfig, daysLeft, reliabilityMeta } from "@/lib/opportunityHelpers";
 
@@ -40,6 +40,11 @@ const LANGS: Record<string, string> = {
   fr:"Français", en:"Anglais", de:"Allemand",
   es:"Espagnol", zh:"Chinois", ar:"Arabe", pt:"Portugais"
 };
+
+// ── Motif de grain subtil pour donner de la texture aux fonds unis
+// (une des recommandations du design system : de l'atmosphère plutôt
+// qu'un aplat de couleur plat). Généré en pur CSS, aucun asset externe.
+const DOT_GRID = "radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1px, transparent 0)";
 
 type AppMethod = {
   icon: LucideIcon; label: string; color: string; bg: string; border: string;
@@ -144,13 +149,13 @@ function DescriptionSection({ description }: { description: string }) {
   }
 
   return (
-    <div style={{ background:"var(--bg-card)", borderRadius:18, border:"1px solid var(--border)",
-      padding:24, boxShadow:"var(--shadow-sm)" }}>
+    <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
+      borderLeft:"3px solid var(--accent)", padding:26, boxShadow:"var(--shadow-sm)" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12,
-        marginBottom:16, flexWrap:"wrap" }}>
-        <p style={{ fontWeight:700, fontSize:15, color:"var(--text-primary)",
-          display:"flex", alignItems:"center", gap:7 }}>
-          <FileText size={16} color="var(--text-secondary)" /> À propos de cette opportunité
+        marginBottom:18, flexWrap:"wrap" }}>
+        <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:17, color:"var(--text-primary)",
+          display:"flex", alignItems:"center", gap:8 }}>
+          <FileText size={16} color="var(--accent-dark)" /> À propos de cette opportunité
         </p>
         <div style={{ display:"flex", alignItems:"center", gap:2, background:"var(--bg-surface-2)",
           borderRadius:10, padding:3, border:"1px solid var(--border-subtle)" }}>
@@ -200,35 +205,42 @@ function MethodCard({ opp }: { opp: Opp }) {
     }
   }
   return (
-    <div style={{ background:"var(--bg-card)", border:`1.5px solid ${m.border}`, borderRadius:18, overflow:"hidden" }}>
-      <div style={{ padding:"16px 20px 12px", display:"flex", alignItems:"center", gap:12 }}>
-        <div style={{ width:44, height:44, borderRadius:12, background:m.bg,
-          display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-          <m.icon size={21} color={m.color} />
+    <div style={{ background:"var(--bg-card)", border:`1.5px solid ${m.border}`, borderRadius:20, overflow:"hidden",
+      boxShadow:"var(--shadow-sm)" }}>
+      <div style={{ padding:"18px 22px 14px", display:"flex", alignItems:"center", gap:14, background:m.bg }}>
+        <div style={{ width:46, height:46, borderRadius:13, background:m.color,
+          display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+          boxShadow:`0 6px 16px ${m.color}55` }}>
+          <m.icon size={22} color="#fff" />
         </div>
         <div>
           <p style={{ fontSize:11, fontWeight:700, color:m.color, textTransform:"uppercase",
-            letterSpacing:".06em", marginBottom:2 }}>Méthode de candidature</p>
-          <p style={{ fontSize:16, fontWeight:700, color:"var(--text-primary)" }}>{m.label}</p>
+            letterSpacing:".08em", marginBottom:3 }}>Méthode de candidature</p>
+          <p style={{ fontFamily:"var(--font-voice)", fontSize:18, fontWeight:600, color:"var(--text-primary)" }}>{m.label}</p>
         </div>
       </div>
-      <div style={{ padding:"0 20px 16px", display:"flex", flexDirection:"column", gap:8 }}>
+      <div style={{ padding:"18px 22px 6px", display:"flex", flexDirection:"column" }}>
         {m.steps.map((step,i) => (
-          <div key={i} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-            <div style={{ width:22, height:22, borderRadius:"50%", flexShrink:0,
+          <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start", position:"relative", paddingBottom: i < m.steps.length-1 ? 20 : 4 }}>
+            {i < m.steps.length-1 && (
+              <div style={{ position:"absolute", left:11, top:24, bottom:-2, width:2, background:"var(--border-subtle)" }} />
+            )}
+            <div style={{ width:23, height:23, borderRadius:"50%", flexShrink:0,
               background:m.color, color:"#fff", display:"flex", alignItems:"center",
-              justifyContent:"center", fontSize:11, fontWeight:700, marginTop:1 }}>
+              justifyContent:"center", fontSize:11, fontWeight:700, marginTop:1, zIndex:1,
+              boxShadow:`0 0 0 4px var(--bg-card)` }}>
               {i+1}
             </div>
-            <p style={{ fontSize:13, color:"var(--text-secondary)", lineHeight:1.55, flex:1 }}>{step}</p>
+            <p style={{ fontSize:13.5, color:"var(--text-secondary)", lineHeight:1.6, flex:1, paddingTop:2 }}>{step}</p>
           </div>
         ))}
       </div>
-      <div style={{ padding:"12px 20px 18px" }}>
+      <div style={{ padding:"14px 22px 20px" }}>
         <button onClick={handleCTA} style={{ width:"100%", fontWeight:700, fontSize:14,
-          padding:"13px", borderRadius:13, border:"none", cursor:"pointer",
-          background:m.color, color:"#fff", boxShadow:`0 4px 16px ${m.color}44`,
-          display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          padding:"14px", borderRadius:14, border:"none", cursor:"pointer",
+          background:m.color, color:"#fff", boxShadow:`0 6px 20px ${m.color}44`,
+          display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+          transition:"transform .15s" }}>
           <m.icon size={16} />{m.cta} →
         </button>
       </div>
@@ -242,7 +254,7 @@ function PrepSection({ oppId }: { oppId: string }) {
     queryKey: ["prep", oppId],
     queryFn: async () => (await api.get(`/opportunities/${oppId}/prep-score`)).data,
   });
-  if (isLoading) return <div style={{ height:120, background:"var(--bg-surface-2)", borderRadius:16 }} className="animate-pulse" />;
+  if (isLoading) return <div style={{ height:120, background:"var(--bg-surface-2)", borderRadius:18 }} className="animate-pulse" />;
   if (!data) return null;
   const theme = data.score>=70 ? { bg:"var(--bg-success)", border:"var(--border-success)", text:"var(--text-success)", bar:"var(--accent)" }
     : data.score>=40 ? { bg:"var(--bg-warning)", border:"var(--border-warning)", text:"var(--text-warning)", bar:"var(--text-warning)" }
@@ -250,11 +262,15 @@ function PrepSection({ oppId }: { oppId: string }) {
   const okCount = data.ok_count ?? 0;
   const total = data.total_checks ?? (data.missing?.length ?? 0);
   return (
-    <div style={{ background:theme.bg, border:`1.5px solid ${theme.border}`, borderRadius:18, padding:20 }}>
+    <div style={{ background:theme.bg, border:`1.5px solid ${theme.border}`, borderRadius:20, padding:22,
+      position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"absolute", top:-40, right:-40, width:140, height:140, borderRadius:"50%",
+        background:theme.bar, opacity:.07, pointerEvents:"none" }} />
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-        <p style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)" }}>Score de préparation</p>
+        <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:15.5, color:"var(--text-primary)" }}>Score de préparation</p>
         {total > 0 && (
-          <span style={{ fontSize:11, fontWeight:700, color:theme.text }}>{okCount}/{total} critères</span>
+          <span style={{ fontSize:11, fontWeight:700, color:theme.text, background:"var(--bg-card)",
+            padding:"3px 9px", borderRadius:20 }}>{okCount}/{total} critères</span>
         )}
       </div>
       <div style={{ display:"flex", gap:16, alignItems:"center", marginBottom:14 }}>
@@ -272,7 +288,7 @@ function PrepSection({ oppId }: { oppId: string }) {
         return (
           <div key={i} onClick={action ? () => router.push(action.href) : undefined}
             style={{ display:"flex", gap:10, alignItems:"center", background:"var(--bg-card)",
-              borderRadius:10, padding:"9px 12px", marginBottom:6, border:"1px solid var(--border-subtle)",
+              borderRadius:12, padding:"10px 13px", marginBottom:7, border:"1px solid var(--border-subtle)",
               cursor: action ? "pointer" : "default" }}>
             <div style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, background:theme.bg,
               display:"flex", alignItems:"center", justifyContent:"center", marginTop:1 }}>
@@ -292,7 +308,7 @@ function PrepSection({ oppId }: { oppId: string }) {
         );
       })}
       {data.missing.length===0 && (
-        <div style={{ background:"var(--bg-card)", borderRadius:10, padding:"8px 12px",
+        <div style={{ background:"var(--bg-card)", borderRadius:12, padding:"10px 13px",
           display:"flex", gap:10, alignItems:"center" }}>
           <PartyPopper size={17} color="var(--text-success)" />
           <p style={{ fontSize:13, fontWeight:700, color:"var(--text-success)" }}>Dossier complet !</p>
@@ -322,7 +338,7 @@ function ApplySection({ oppId }: { oppId: string }) {
     return (
       <button onClick={() => router.push("/dashboard/applications")}
         style={{ width:"100%", background:"var(--bg-surface-2)", color:"var(--text-primary)", fontWeight:700,
-          fontSize:14, padding:"14px", borderRadius:14, border:"1px solid var(--border)", cursor:"pointer",
+          fontSize:14, padding:"15px", borderRadius:16, border:"1px solid var(--border)", cursor:"pointer",
           display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
         <Check size={16} />{state==="done"?"Voir mes candidatures →":"Déjà candidaté → Voir mes candidatures"}
       </button>
@@ -330,11 +346,11 @@ function ApplySection({ oppId }: { oppId: string }) {
   }
   return (
     <button onClick={apply} disabled={state==="loading"}
-      style={{ width:"100%", fontWeight:700, fontSize:15, padding:"16px", borderRadius:14, border:"none",
+      style={{ width:"100%", fontWeight:700, fontSize:15, padding:"17px", borderRadius:16, border:"none",
         cursor:state==="loading"?"not-allowed":"pointer",
         background:state==="loading"?"var(--border)":"linear-gradient(135deg,var(--accent),#0d9488)",
         color: state==="loading" ? "var(--text-muted)" : "#fff",
-        boxShadow: state==="loading" ? "none" : "0 4px 16px rgba(5,150,105,0.3)" }}>
+        boxShadow: state==="loading" ? "none" : "0 8px 24px rgba(5,150,105,0.32)" }}>
       {state==="loading"?"Création...":"Suivre cette candidature →"}
     </button>
   );
@@ -368,27 +384,36 @@ function LetterSection({ oppId, title }: { oppId: string; title: string }) {
     finally { setSaving(false); }
   }
   return (
-    <div style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)", overflow:"hidden" }}>
-      <div style={{ padding:"16px 20px", borderBottom:state==="done"?"1px solid var(--border-subtle)":"none" }}>
+    <div style={{ background:"var(--bg-card)", borderRadius:18, border:"1px solid var(--border)", overflow:"hidden",
+      boxShadow:"var(--shadow-sm)" }}>
+      <div style={{ padding:"18px 22px", background:"linear-gradient(135deg, rgba(124,58,237,.08), rgba(124,58,237,0))",
+        borderBottom:state==="done"?"1px solid var(--border-subtle)":"none" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
-          <div>
-            <p style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)" }}>Lettre de motivation IA</p>
-            <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:2 }}>Llama 3.3 70B · Personnalisée</p>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:"rgba(124,58,237,.14)",
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <Sparkles size={16} color="#7c3aed" />
+            </div>
+            <div>
+              <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:15, color:"var(--text-primary)" }}>Lettre de motivation IA</p>
+              <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:1 }}>Llama 3.3 70B · Personnalisée</p>
+            </div>
           </div>
           <Badge>IA</Badge>
         </div>
         <button onClick={generate} disabled={state==="loading"}
-          style={{ width:"100%", fontWeight:600, fontSize:13, padding:"11px", borderRadius:12,
-            border:"1.5px solid #7c3aed", background:"transparent",
+          style={{ width:"100%", fontWeight:700, fontSize:13, padding:"12px", borderRadius:13,
+            border:"none", background:state==="loading"?"var(--border)":"linear-gradient(135deg,#7c3aed,#9333ea)",
             cursor:state==="loading"?"not-allowed":"pointer",
-            color:state==="loading"?"var(--text-muted)":"#7c3aed" }}>
+            color:state==="loading"?"var(--text-muted)":"#fff",
+            boxShadow:state==="loading"?"none":"0 6px 18px rgba(124,58,237,.32)" }}>
           {state==="loading"?"Génération en cours...":state==="done"?"Régénérer":"Générer ma lettre →"}
         </button>
       </div>
       {state==="done"&&letter&&(
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-            padding:"10px 20px", background:"var(--bg-surface-2)", borderBottom:"1px solid var(--border-subtle)" }}>
+            padding:"10px 22px", background:"var(--bg-surface-2)", borderBottom:"1px solid var(--border-subtle)" }}>
             <span style={{ fontSize:11, color:"var(--text-muted)" }}>{words} mots</span>
             <div style={{ display:"flex", gap:14, alignItems:"center" }}>
               <button onClick={saveToVault} disabled={saving||saved} style={{ fontSize:11, fontWeight:700,
@@ -402,7 +427,7 @@ function LetterSection({ oppId, title }: { oppId: string; title: string }) {
               </button>
             </div>
           </div>
-          <div style={{ padding:"16px 20px", maxHeight:300, overflowY:"auto" }}>
+          <div style={{ padding:"18px 22px", maxHeight:300, overflowY:"auto" }}>
             <p style={{ fontSize:13, color:"var(--text-secondary)", lineHeight:1.7, whiteSpace:"pre-wrap" }}>{letter}</p>
           </div>
         </div>
@@ -444,22 +469,19 @@ export default function OpportunityDetailPage() {
     { icon: FileText,      label:"Filières",      val: opp.required_fields.length>0 ? opp.required_fields.join(", ") : "Toutes filières — ouvert à tous" },
     { icon: LanguagesIcon, label:"Langues",        val: opp.required_languages.length>0 ? opp.required_languages.map(l=>LANGS[l]??l).join(", ") : "Aucune langue spécifique" },
     { icon: Percent,       label:"Moyenne min.",   val: opp.min_gpa ? `${opp.min_gpa}/20` : "Aucune moyenne requise" },
-    { icon: ShieldCheck,   label:"Fiabilité",      val: `${opp.reliability_score}/100` },
-    { icon: CalendarClock, label:"Date limite",    val: opp.deadline ? new Date(opp.deadline).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}) : "Non précisée" },
   ];
+
+  const urgencyColor = d===null ? "var(--text-success)" : d<=7 ? "var(--text-danger)" : d<=14 ? "var(--text-warning)" : "var(--text-success)";
 
   return (
     <div className="animate-fade-in" style={{ height:"100%", overflowY:"auto", background:"var(--bg-base)" }}>
+      <div style={{ maxWidth:1200, margin:"0 auto", padding:"20px 24px 48px" }}>
 
-      <div style={{ background:`linear-gradient(135deg,${cfg.gradient})`, padding:"20px 24px 32px",
-        position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:-60, right:-30, width:220, height:220,
-          background:"rgba(255,255,255,0.08)", borderRadius:"50%", pointerEvents:"none" }} />
-
+        {/* Barre utilitaire — plus de bandeau plein écran, juste un rappel discret */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22 }}>
           <button onClick={() => router.back()} style={{ display:"flex", alignItems:"center", gap:6,
-            fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.9)",
-            background:"rgba(255,255,255,0.14)", border:"1px solid rgba(255,255,255,0.18)",
+            fontSize:13, fontWeight:600, color:"var(--text-secondary)",
+            background:"var(--bg-surface-2)", border:"1px solid var(--border-subtle)",
             padding:"7px 14px", borderRadius:10, cursor:"pointer" }}>
             <ArrowLeft size={15} /> Retour
           </button>
@@ -470,122 +492,145 @@ export default function OpportunityDetailPage() {
           </div>
         </div>
 
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
-          <span style={{ fontSize:11, fontWeight:700, color:"#fff",
-            background:"rgba(255,255,255,0.2)", padding:"4px 12px", borderRadius:20,
-            border:"1px solid rgba(255,255,255,0.22)" }}>{cfg.label}</span>
-          {opp.is_verified && (
-            <span style={{ fontSize:11, fontWeight:700, color:"#fff",
-              background:"rgba(255,255,255,0.14)", padding:"4px 12px", borderRadius:20,
-              border:"1px solid rgba(255,255,255,0.18)", display:"flex", alignItems:"center", gap:4 }}>
-              <ShieldCheck size={12} /> Vérifié
-            </span>
-          )}
-          {d!==null && d>=0 && d<=14 && (
-            <span style={{ fontSize:11, fontWeight:700, color:"#fff",
-              background: d<=7 ? "rgba(220,38,38,.85)" : "rgba(245,158,11,.85)",
-              padding:"4px 12px", borderRadius:20, display:"flex", alignItems:"center", gap:4 }}>
-              <Flame size={12} /> {d===0 ? "Aujourd'hui !" : `J-${d}`}
-            </span>
-          )}
-        </div>
+        {/* Hero éditorial : titre à gauche, carte "en un coup d'œil" flottante à droite —
+            la couleur de catégorie devient un accent, pas un bandeau plein écran */}
+        <div className="opp-hero-grid" style={{ display:"grid", gap:24, alignItems:"start", marginBottom:28 }}>
 
-        <h1 style={{ fontFamily:"var(--font-voice)", fontWeight:500, fontSize:24, color:"#fff", lineHeight:1.3, marginBottom:12 }}>
-          {opp.title}
-        </h1>
-        <div style={{ display:"flex", gap:18, flexWrap:"wrap" }}>
-          <span style={{ fontSize:13, color:"rgba(255,255,255,0.82)", display:"flex", alignItems:"center", gap:5 }}>
-            <Globe size={14} /> {opp.country}
-          </span>
-          {opp.deadline && (
-            <span style={{ fontSize:13, color:"rgba(255,255,255,0.82)", display:"flex", alignItems:"center", gap:5 }}>
-              <CalendarClock size={14} /> {new Date(opp.deadline).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}
-            </span>
-          )}
-          <span style={{ fontSize:13, color:"rgba(255,255,255,0.82)", display:"flex", alignItems:"center", gap:5 }}>
-            <reliability.icon size={14} /> Fiabilité {opp.reliability_score}/100
-          </span>
-        </div>
-      </div>
+          <div style={{ position:"relative", paddingLeft:20 }}>
+            <div style={{ position:"absolute", left:0, top:4, bottom:4, width:4, borderRadius:4,
+              background:`linear-gradient(${cfg.gradient})` }} />
 
-      <div className="opp-detail-grid" style={{ maxWidth:1200, margin:"0 auto", padding:"24px 24px 48px",
-        display:"grid", gridTemplateColumns:"1fr 380px", gap:24, alignItems:"start" }}>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
+              <span style={{ fontSize:11, fontWeight:700, color:cfg.color ?? "var(--accent-dark)",
+                background:"var(--bg-surface-2)", padding:"4px 12px", borderRadius:20,
+                border:"1px solid var(--border-subtle)" }}>{cfg.label}</span>
+              {opp.is_verified && (
+                <span style={{ fontSize:11, fontWeight:700, color:"var(--text-success)",
+                  background:"var(--bg-success)", padding:"4px 12px", borderRadius:20,
+                  display:"flex", alignItems:"center", gap:4 }}>
+                  <ShieldCheck size={12} /> Vérifié
+                </span>
+              )}
+              {d!==null && d>=0 && d<=14 && (
+                <span style={{ fontSize:11, fontWeight:700, color:"#fff",
+                  background: d<=7 ? "#dc2626" : "#f59e0b",
+                  padding:"4px 12px", borderRadius:20, display:"flex", alignItems:"center", gap:4 }}>
+                  <Flame size={12} /> {d===0 ? "Aujourd'hui !" : `J-${d}`}
+                </span>
+              )}
+            </div>
 
-        <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
+            <h1 style={{ fontFamily:"var(--font-voice)", fontWeight:500, fontSize:32, color:"var(--text-primary)",
+              lineHeight:1.2, marginBottom:14, letterSpacing:"-.01em" }}>
+              {opp.title}
+            </h1>
 
-          <MethodCard opp={opp} />
-
-          <DescriptionSection description={opp.description} />
-
-          <div style={{ background:"var(--bg-card)", borderRadius:18, border:"1px solid var(--border)",
-            padding:24, boxShadow:"var(--shadow-sm)" }}>
-            <p style={{ fontWeight:700, fontSize:15, color:"var(--text-primary)", marginBottom:16,
-              display:"flex", alignItems:"center", gap:7 }}>
-              <ListChecks size={16} color="var(--text-secondary)" /> Critères d'éligibilité
-            </p>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              {CRITERIA.map(({icon: Icon, label, val}) => (
-                <div key={label} style={{ background:"var(--bg-surface-2)", borderRadius:12, padding:"12px 14px",
-                  border:"1px solid var(--border-subtle)" }}>
-                  <p style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", textTransform:"uppercase",
-                    letterSpacing:".05em", marginBottom:6, display:"flex", alignItems:"center", gap:5 }}>
-                    <Icon size={12} /> {label}
-                  </p>
-                  <p style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>{val}</p>
-                </div>
-              ))}
+            <div style={{ display:"flex", gap:16, flexWrap:"wrap", color:"var(--text-secondary)", fontSize:13.5 }}>
+              <span style={{ display:"flex", alignItems:"center", gap:6 }}><Globe size={14} /> {opp.country}</span>
+              <span style={{ color:"var(--border)" }}>•</span>
+              <span style={{ display:"flex", alignItems:"center", gap:6 }}>
+                <reliability.icon size={14} /> Fiabilité {opp.reliability_score}/100
+              </span>
             </div>
           </div>
 
-          {opp.deadline && d!==null && d>=0 && (
-            <div style={{
-              background: d<=7 ? "var(--bg-danger)" : d<=14 ? "var(--bg-warning)" : "var(--bg-success)",
-              border: `1.5px solid ${d<=7 ? "var(--border-danger)" : d<=14 ? "var(--border-warning)" : "var(--border-success)"}`,
-              borderRadius:18, padding:"18px 22px",
-              display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div>
-                <p style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", textTransform:"uppercase",
-                  letterSpacing:".05em", marginBottom:6, display:"flex", alignItems:"center", gap:5 }}>
-                  <Clock size={12} /> Temps restant
-                </p>
-                <p style={{ fontSize:15, fontWeight:700,
-                  color: d<=7 ? "var(--text-danger)" : d<=14 ? "var(--text-warning)" : "var(--text-success)" }}>
-                  {new Date(opp.deadline).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}
-                </p>
+          {/* Carte "en un coup d'œil" — l'élément qui donne du relief, flotte légèrement */}
+          <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
+            padding:"20px 22px", boxShadow:"var(--shadow-md)", position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", top:-30, right:-30, width:100, height:100, borderRadius:"50%",
+              background:`linear-gradient(${cfg.gradient})`, opacity:.12, pointerEvents:"none" }} />
+            <p style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", textTransform:"uppercase",
+              letterSpacing:".06em", marginBottom:14 }}>En un coup d'œil</p>
+
+            {opp.deadline && d!==null && d>=0 ? (
+              <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:14 }}>
+                <span style={{ fontFamily:"var(--font-voice)", fontSize:40, fontWeight:600, lineHeight:1, color:urgencyColor }}>{d}</span>
+                <span style={{ fontSize:12.5, fontWeight:700, color:urgencyColor }}>jour{d>1?"s":""} restant{d>1?"s":""}</span>
               </div>
-              <div style={{ textAlign:"right" }}>
-                <p style={{ fontFamily:"var(--font-voice)", fontSize:44, fontWeight:600, lineHeight:1,
-                  color: d<=7 ? "var(--text-danger)" : d<=14 ? "var(--text-warning)" : "var(--text-success)" }}>{d}</p>
-                <p style={{ fontSize:12, fontWeight:700,
-                  color: d<=7 ? "var(--text-danger)" : d<=14 ? "var(--text-warning)" : "var(--text-success)" }}>
-                  jour{d>1?"s":""} restant{d>1?"s":""}
-                </p>
+            ) : (
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                <CalendarClock size={20} color="var(--text-muted)" />
+                <span style={{ fontSize:13.5, fontWeight:600, color:"var(--text-secondary)" }}>Deadline non précisée</span>
               </div>
+            )}
+            {opp.deadline && (
+              <p style={{ fontSize:12, color:"var(--text-muted)", marginBottom:16 }}>
+                {new Date(opp.deadline).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}
+              </p>
+            )}
+
+            <div style={{ height:1, background:"var(--border-subtle)", margin:"14px 0" }} />
+
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ fontSize:12.5, color:"var(--text-secondary)", display:"flex", alignItems:"center", gap:6 }}>
+                <reliability.icon size={14} color={
+                  reliability.variant==="success" ? "var(--text-success)" :
+                  reliability.variant==="warning" ? "var(--text-warning)" : "var(--text-danger)"
+                } /> Fiabilité
+              </span>
+              <span style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>{opp.reliability_score}/100</span>
             </div>
-          )}
-
-          <CVBuilder oppId={id} />
-
-          {opp.source_url && (
-            <a href={opp.source_url} target="_blank" rel="noopener noreferrer"
-              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, textAlign:"center",
-                fontSize:12, color:"var(--text-muted)", textDecoration:"none", padding:"8px" }}>
-              <ExternalLink size={12} /> Voir la source officielle
-            </a>
-          )}
+          </div>
         </div>
 
-        <div style={{ display:"flex", flexDirection:"column", gap:16, position:"sticky", top:20 }}>
-          <button onClick={() => router.push(`/dashboard/coach?opp=${id}&title=${encodeURIComponent(opp.title)}`)}
-            style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%",
-              padding:"14px", borderRadius:14, border:"none", cursor:"pointer",
-              background:"linear-gradient(135deg,#7c3aed,#a78bfa)", color:"#fff", fontWeight:700, fontSize:14,
-              boxShadow:"0 4px 16px rgba(124,58,237,.3)" }}>
-            <MessageSquareText size={17} /> Discuter avec l'IA
-          </button>
-          <PrepSection oppId={id} />
-          <ApplySection oppId={id} />
-          <LetterSection oppId={id} title={opp.title} />
+        {/* Contenu principal — même agencement 2 colonnes qu'avant, composants inchangés */}
+        <div className="opp-detail-grid" style={{ display:"grid", gridTemplateColumns:"1fr 380px", gap:24, alignItems:"start" }}>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
+
+            <MethodCard opp={opp} />
+
+            <DescriptionSection description={opp.description} />
+
+            <div style={{ background:"var(--bg-card)", borderRadius:20, border:"1px solid var(--border)",
+              padding:26, boxShadow:"var(--shadow-sm)" }}>
+              <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:17, color:"var(--text-primary)", marginBottom:18,
+                display:"flex", alignItems:"center", gap:8 }}>
+                <ListChecks size={16} color="var(--accent-dark)" /> Critères d'éligibilité
+              </p>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                {CRITERIA.map(({icon: Icon, label, val}) => (
+                  <div key={label} style={{ display:"flex", gap:12, alignItems:"flex-start",
+                    background:"var(--bg-surface-2)", borderRadius:14, padding:"14px 16px",
+                    border:"1px solid var(--border-subtle)" }}>
+                    <div style={{ width:32, height:32, borderRadius:10, background:"var(--bg-card)",
+                      display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+                      border:"1px solid var(--border-subtle)" }}>
+                      <Icon size={14} color="var(--accent-dark)" />
+                    </div>
+                    <div style={{ minWidth:0 }}>
+                      <p style={{ fontSize:10.5, fontWeight:700, color:"var(--text-muted)", textTransform:"uppercase",
+                        letterSpacing:".06em", marginBottom:4 }}>{label}</p>
+                      <p style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)", lineHeight:1.4 }}>{val}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <CVBuilder oppId={id} />
+
+            {opp.source_url && (
+              <a href={opp.source_url} target="_blank" rel="noopener noreferrer"
+                style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, textAlign:"center",
+                  fontSize:12, color:"var(--text-muted)", textDecoration:"none", padding:"8px" }}>
+                <ExternalLink size={12} /> Voir la source officielle
+              </a>
+            )}
+          </div>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:16, position:"sticky", top:20 }}>
+            <button onClick={() => router.push(`/dashboard/coach?opp=${id}&title=${encodeURIComponent(opp.title)}`)}
+              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%",
+                padding:"15px", borderRadius:16, border:"none", cursor:"pointer",
+                background:"linear-gradient(135deg,#7c3aed,#a78bfa)", color:"#fff", fontWeight:700, fontSize:14,
+                boxShadow:"0 8px 24px rgba(124,58,237,.34)" }}>
+              <Compass size={17} /> Discuter avec Link IA
+            </button>
+            <PrepSection oppId={id} />
+            <ApplySection oppId={id} />
+            <LetterSection oppId={id} title={opp.title} />
+          </div>
         </div>
       </div>
     </div>

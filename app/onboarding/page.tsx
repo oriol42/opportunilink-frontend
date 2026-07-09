@@ -23,12 +23,12 @@ const FIELDS = [
 ];
 
 const OBJECTIVES = [
-  { key:"bourse",   icon: GraduationCap, label:"Bourse d'études",        desc:"Financer mes études à l'étranger ou localement" },
-  { key:"stage",     icon: Briefcase,     label:"Stage professionnel",   desc:"Gagner de l'expérience en entreprise" },
-  { key:"emploi",    icon: Rocket,        label:"Emploi",                desc:"Trouver un poste après mes études" },
-  { key:"echange",   icon: Globe,         label:"Programme d'échange",   desc:"Étudier à l'étranger pendant quelques mois" },
-  { key:"concours",  icon: Trophy,        label:"Concours & compétitions", desc:"Participer à des compétitions et prix" },
-  { key:"tout",      icon: Sparkles,      label:"Tout m'intéresse",      desc:"Je veux voir toutes les opportunités" },
+  { key:"bourse",   icon: GraduationCap, label:"Bourse d'études",        desc:"Financer mes études à l'étranger ou localement", color:"#7c3aed" },
+  { key:"stage",     icon: Briefcase,     label:"Stage professionnel",   desc:"Gagner de l'expérience en entreprise", color:"#2563eb" },
+  { key:"emploi",    icon: Rocket,        label:"Emploi",                desc:"Trouver un poste après mes études", color:"#059669" },
+  { key:"echange",   icon: Globe,         label:"Programme d'échange",   desc:"Étudier à l'étranger pendant quelques mois", color:"#d97706" },
+  { key:"concours",  icon: Trophy,        label:"Concours & compétitions", desc:"Participer à des compétitions et prix", color:"#dc2626" },
+  { key:"tout",      icon: Sparkles,      label:"Tout m'intéresse",      desc:"Je veux voir toutes les opportunités", color:"#0d9488" },
 ];
 
 const STEPS = [
@@ -89,8 +89,8 @@ function FieldStep({ value, onChange }: { value: string; onChange: (f: string) =
           return (
             <button key={f} type="button" onClick={() => { onChange(f); setSearch(""); }}
               style={{ padding: "10px 14px", borderRadius: 12, border: "1.5px solid",
-                borderColor: active ? "var(--accent)" : "var(--border)",
-                background: active ? "var(--bg-success)" : "var(--bg-surface-2)",
+                borderColor: active ? "var(--accent)" : "rgba(16,185,129,0.18)",
+                background: active ? "var(--bg-success)" : "rgba(16,185,129,0.05)",
                 color: active ? "var(--text-success)" : "var(--text-secondary)",
                 fontWeight: 600, fontSize: 13, cursor: "pointer", transition: "all .15s",
                 textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
@@ -184,8 +184,8 @@ export default function OnboardingPage() {
                 return (
                   <button key={l} type="button" onClick={() => setForm({...form, level: l})}
                     style={{ padding: "14px 16px", borderRadius: 14, border: "2px solid",
-                      borderColor: active ? "var(--accent)" : "var(--border)",
-                      background: active ? "var(--bg-success)" : "var(--bg-surface-2)",
+                      borderColor: active ? "var(--accent)" : "rgba(16,185,129,0.18)",
+                      background: active ? "var(--bg-success)" : "rgba(16,185,129,0.05)",
                       color: active ? "var(--text-success)" : "var(--text-secondary)",
                       fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all .15s",
                       display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
@@ -213,22 +213,22 @@ export default function OnboardingPage() {
                   <button key={obj.key} type="button" onClick={() => setForm({...form, objective: obj.key})}
                     style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px",
                       borderRadius: 16, border: "2px solid",
-                      borderColor: active ? "var(--accent)" : "var(--border)",
-                      background: active ? "var(--bg-success)" : "var(--bg-surface-2)",
+                      borderColor: active ? obj.color : `${obj.color}30`,
+                      background: active ? `${obj.color}14` : `${obj.color}08`,
                       cursor: "pointer", transition: "all .15s", textAlign: "left" }}>
                     <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                      background: active ? "var(--accent)" : "var(--bg-input)",
+                      background: active ? obj.color : `${obj.color}1c`,
                       display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Icon size={20} color={active ? "#fff" : "var(--text-muted)"} strokeWidth={2} />
+                      <Icon size={20} color={active ? "#fff" : obj.color} strokeWidth={2} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: 600, fontSize: 14,
-                        color: active ? "var(--text-success)" : "var(--text-primary)", marginBottom: 2 }}>
+                        color: active ? obj.color : "var(--text-primary)", marginBottom: 2 }}>
                         {obj.label}
                       </p>
                       <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{obj.desc}</p>
                     </div>
-                    {active && <Check size={18} color="var(--accent)" />}
+                    {active && <Check size={18} color={obj.color} />}
                   </button>
                 );
               })}

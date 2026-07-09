@@ -12,6 +12,7 @@ export interface User {
   objectives: string[] | null;
   gpa: number | null;
   age: number | null;
+  gender: string | null;
   phone: string | null;
   opportuni_score: number;
   is_premium: boolean;
@@ -34,6 +35,13 @@ export function setToken(token: string): void {
 export function removeToken(): void {
   localStorage.removeItem("access_token");
 }
+// Les favoris (SaveButton) sont mis en cache dans localStorage sous une clé
+// globale, jamais scopée par utilisateur. Sans ce nettoyage, un nouveau
+// compte hérite silencieusement des favoris du compte précédent utilisé
+// sur ce même navigateur (bug visible : cœurs déjà "cochés" sur un compte vierge).
+export function clearStaleLocalCaches(): void {
+  localStorage.removeItem("saved_opps");
+}
 export function isTokenExpired(): boolean {
   const token = getToken();
   if (!token) return true;
@@ -46,15 +54,18 @@ export function isTokenExpired(): boolean {
 }
 export async function login(payload: LoginPayload): Promise<User> {
   const response = await api.post("/auth/login", payload);
+  clearStaleLocalCaches();
   setToken(response.data.access_token);
   return fetchCurrentUser();
 }
 export async function register(payload: RegisterPayload): Promise<User> {
   const response = await api.post("/auth/register", payload);
+  clearStaleLocalCaches();
   setToken(response.data.access_token);
   return fetchCurrentUser();
 }
 export function logout(): void {
+  clearStaleLocalCaches();
   removeToken();
   window.location.href = "/login";
 }

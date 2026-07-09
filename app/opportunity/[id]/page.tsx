@@ -318,40 +318,121 @@ function PrepSection({ oppId }: { oppId: string }) {
   );
 }
 
+interface HowToApply {
+  method: string;
+  action_url: string | null;
+  contact_email: string | null;
+  steps: string[];
+  readiness: { ready: boolean; missing_docs: string[] };
+}
+interface AppListItem { id: string; opportunity_id: string; status: string }
+
 function ApplySection({ oppId }: { oppId: string }) {
   const router = useRouter();
   const { success, error: toastError, warning } = useToast();
-  const [state, setState] = useState<"idle"|"loading"|"done"|"already">("idle");
-  async function apply() {
+  const [state, setState] = useState<"idle"|"loading"|"guide"|"already">("idle");
+  const [appId, setAppId] = useState<string | null>(null);
+  const [guide, setGuide] = useState<HowToApply | null>(null);
+  const [marking, setMarking] = useState(false);
+
+  async function loadGuide(id: string) {
+    const g = await api.get<HowToApply>(`/applications/${id}/how-to-apply`);
+    setAppId(id);
+    setGuide(g.data);
+    setState("guide");
+  }
+
+  async function start() {
     setState("loading");
     try {
-      await api.post("/applications", { opportunity_id: oppId });
-      setState("done");
-      success("Candidature créée !");
+      const res = await api.post<{ id: string }>("/applications", { opportunity_id: oppId });
+      await loadGuide(res.data.id);
+      success("Candidature créée ! Voici comment postuler.");
     } catch (err: unknown) {
       const s = (err as { response?: { status?: number } }).response?.status;
-      if (s===400) { setState("already"); warning("Tu as déjà candidaté."); }
-      else { setState("idle"); toastError("Erreur. Réessaie."); }
+      if (s === 400) {
+        try {
+          const list = await api.get<AppListItem[]>("/applications");
+          const existing = list.data.find(a => a.opportunity_id === oppId);
+          if (existing && existing.status === "draft") { await loadGuide(existing.id); return; }
+          if (existing) { setState("already"); warning("Tu as déjà candidaté."); return; }
+        } catch { /* fallback ci-dessous */ }
+        setState("already"); warning("Tu as déjà candidaté.");
+      } else { setState("idle"); toastError("Erreur. Réessaie."); }
     }
   }
-  if (state==="done"||state==="already") {
+
+  async function markSubmitted() {
+    if (!appId) return;
+    setMarking(true);
+    try {
+      await api.post(`/applications/${appId}/apply`);
+      success("Candidature marquée comme soumise !");
+      router.push("/dashboard/applications");
+    } catch { toastError("Erreur. Réessaie."); }
+    finally { setMarking(false); }
+  }
+
+  if (state === "already") {
     return (
       <button onClick={() => router.push("/dashboard/applications")}
         style={{ width:"100%", background:"var(--bg-surface-2)", color:"var(--text-primary)", fontWeight:700,
           fontSize:14, padding:"15px", borderRadius:16, border:"1px solid var(--border)", cursor:"pointer",
           display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-        <Check size={16} />{state==="done"?"Voir mes candidatures →":"Déjà candidaté → Voir mes candidatures"}
+        <Check size={16} />Déjà candidaté → Voir mes candidatures
       </button>
     );
   }
+
+  if (state === "guide" && guide) {
+    return (
+      <div style={{ background:"var(--bg-card)", borderRadius:18, border:"1px solid var(--border)",
+        padding:18, boxShadow:"var(--shadow-sm)" }}>
+        <p style={{ fontWeight:700, fontSize:14, color:"var(--text-primary)", marginBottom:10,
+          display:"flex", alignItems:"center", gap:7 }}>
+          <ListChecks size={15} color="var(--accent-dark)" />Comment postuler
+        </p>
+        <ol style={{ margin:"0 0 14px", paddingLeft:18 }}>
+          {guide.steps.map((s, i) => (
+            <li key={i} style={{ fontSize:13, color:"var(--text-secondary)", marginBottom:6, lineHeight:1.4 }}>{s}</li>
+          ))}
+        </ol>
+        {!guide.readiness.ready && guide.readiness.missing_docs.length > 0 && (
+          <div style={{ background:"var(--bg-warning)", border:"1px solid var(--border-warning)", borderRadius:10,
+            padding:"9px 13px", fontSize:12, color:"var(--text-warning)", marginBottom:14 }}>
+            Il te manque : {guide.readiness.missing_docs.join(", ")} dans ton coffre-fort.
+          </div>
+        )}
+        <div style={{ display:"flex", gap:8 }}>
+          {guide.action_url && (
+            <a href={guide.action_url} target="_blank" rel="noopener noreferrer"
+              style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                padding:"13px", borderRadius:14, textDecoration:"none", fontWeight:700, fontSize:14,
+                background:"linear-gradient(135deg,var(--accent),#0d9488)", color:"#fff" }}>
+              {guide.method === "email" ? <Mail size={15} /> : <ExternalLink size={15} />}
+              {guide.method === "email" ? "Ouvrir email" : "Aller postuler"}
+            </a>
+          )}
+          <button onClick={markSubmitted} disabled={marking}
+            style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+              padding:"13px", borderRadius:14, border:"1px solid var(--border)", background:"var(--bg-surface-2)",
+              color:"var(--text-primary)", fontWeight:700, fontSize:14,
+              cursor: marking ? "not-allowed" : "pointer" }}>
+            <Check size={15} />{marking ? "..." : "J'ai postulé"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <button onClick={apply} disabled={state==="loading"}
+    <button onClick={start} disabled={state === "loading"}
       style={{ width:"100%", fontWeight:700, fontSize:15, padding:"17px", borderRadius:16, border:"none",
-        cursor:state==="loading"?"not-allowed":"pointer",
-        background:state==="loading"?"var(--border)":"linear-gradient(135deg,var(--accent),#0d9488)",
-        color: state==="loading" ? "var(--text-muted)" : "#fff",
-        boxShadow: state==="loading" ? "none" : "0 8px 24px rgba(5,150,105,0.32)" }}>
-      {state==="loading"?"Création...":"Suivre cette candidature →"}
+        cursor: state === "loading" ? "not-allowed" : "pointer",
+        background: state === "loading" ? "var(--border)" : "linear-gradient(135deg,var(--accent),#0d9488)",
+        color: state === "loading" ? "var(--text-muted)" : "#fff",
+        boxShadow: state === "loading" ? "none" : "0 8px 24px rgba(5,150,105,0.32)" }}>
+      {state === "loading" ? "Préparation..." : "Commencer ma candidature →"}
     </button>
   );
 }

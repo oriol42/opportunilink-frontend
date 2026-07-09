@@ -126,6 +126,7 @@ function ProfileInner() {
     city:       user?.city ?? "",
     gpa:        user?.gpa?.toString() ?? "",
     age:        user?.age?.toString() ?? "",
+    gender:     user?.gender ?? "",
     phone:      user?.phone ?? "",
     languages:  (user?.languages as string[]) ?? ["fr","en"],
     skills:     (user?.skills_with_level as Record<string,number>) ?? {},
@@ -296,6 +297,27 @@ function ProfileInner() {
                   <input type="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}
                     style={inputStyle} placeholder="+237 6XX XXX XXX" />
                 </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Genre (optionnel)</label>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                  {[{v:"homme",l:"Homme"},{v:"femme",l:"Femme"}].map(o=>(
+                    <button key={o.v} type="button"
+                      onClick={()=>setForm({...form, gender: form.gender===o.v ? "" : o.v})}
+                      style={{ padding:"11px 14px", borderRadius:12, border:"2px solid",
+                        borderColor: form.gender===o.v ? "#7c3aed" : "var(--border)",
+                        background: form.gender===o.v ? "rgba(124,58,237,.1)" : "var(--bg-surface-2)",
+                        color: form.gender===o.v ? "#7c3aed" : "var(--text-secondary)",
+                        fontWeight:700, fontSize:12.5, cursor:"pointer", transition:"all .15s",
+                        display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      {o.l}{form.gender===o.v && <Check size={13} />}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize:11.5, color:"var(--text-muted)", marginTop:6, lineHeight:1.4 }}>
+                  Sert uniquement à repérer les opportunités réservées à un genre (ex : bourses "Femmes en STEM").
+                  Laisse vide si tu préfères ne pas le renseigner.
+                </p>
               </div>
               <div style={{ background:"var(--bg-success)", borderRadius:12, padding:"12px 14px",
                 border:"1px solid var(--border-success)", display:"flex", gap:10 }}>

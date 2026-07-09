@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Mail, Lock, User, LoaderCircle } from "lucide-react";
 import AuthShell from "@/components/auth/AuthShell";
+import { clearStaleLocalCaches } from "@/lib/auth";
 
 const inputWrap: React.CSSProperties = { position: "relative" };
 const inputStyle: React.CSSProperties = {
@@ -58,6 +59,7 @@ export default function RegisterPage() {
       });
       const loginData = await loginRes.json();
       if (!loginRes.ok) { router.push("/login"); return; }
+      clearStaleLocalCaches();
       localStorage.setItem("access_token", loginData.access_token);
       router.push("/onboarding");
     } catch {

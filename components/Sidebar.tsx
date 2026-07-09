@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@/store/useStore";
+import { clearStaleLocalCaches } from "@/lib/auth";
 import { LayoutGrid, FileText, Bookmark, FolderOpen, MessageCircle, User, LogOut } from "lucide-react";
 
 const NAV = [
@@ -16,12 +18,15 @@ const NAV = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, setUser } = useStore();
 
   const initials = user?.full_name
     ?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
 
   function handleLogout() {
+    clearStaleLocalCaches();
+    queryClient.clear(); // évite qu'un prochain compte hérite du cache d'un autre utilisateur
     localStorage.removeItem("access_token");
     setUser(null);
     router.push("/login");

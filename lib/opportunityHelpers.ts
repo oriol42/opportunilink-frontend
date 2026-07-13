@@ -22,6 +22,10 @@ export interface OpportunityLite {
   required_level?: string[];
   required_languages?: string[];
   min_gpa?: number | null;
+  ai_extracted?: boolean;
+  application_method?: string | null;
+  has_salary?: boolean;
+  salary_text?: string | null;
 }
 
 export interface UserLite {

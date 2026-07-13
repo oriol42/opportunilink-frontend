@@ -41,8 +41,8 @@ export default function ReportButton({ oppId }: { oppId: string }) {
         title="Signaler cette opportunité"
         style={{
           display: "flex", alignItems: "center", gap: 6,
-          background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.18)",
-          color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 700,
+          background: "var(--bg-surface-2)", border: "1px solid var(--border-subtle)",
+          color: "var(--text-secondary)", fontSize: 12, fontWeight: 700,
           padding: "7px 12px", borderRadius: 10, cursor: "pointer",
         }}
       >

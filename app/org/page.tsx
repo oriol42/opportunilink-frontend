@@ -14,7 +14,7 @@ const isProEmail = (e: string) => { const d = e.split("@")[1]?.toLowerCase(); re
 const TYPE_LABELS: Record<string,string> = { bourse:"Bourse", stage:"Stage", emploi:"Emploi", echange:"Échange", concours:"Concours" };
 const TYPE_COLORS: Record<string,string> = { bourse:"#7c3aed", stage:"#2563eb", emploi:"#059669", echange:"#d97706", concours:"#dc2626" };
 const ORG_TYPES = ["entreprise","université","ong","ambassade","gouvernement","fondation"];
-const LEVELS = ["Licence","Master","Doctorat","BTS","DUT","Ingénieur"];
+const LEVELS = ["Bac","Licence","Master","Doctorat","BTS","DUT","Ingénieur"];
 const FIELDS = ["Informatique","Génie Logiciel","Réseaux & Télécoms","Droit","Économie","Gestion","Finance","Marketing","Médecine","Sciences","Mathématiques","Ingénierie Civile","Architecture","Agriculture","Éducation","Langues","Psychologie"];
 const LANGS = [{code:"fr",label:"Français"},{code:"en",label:"Anglais"},{code:"de",label:"Allemand"},{code:"es",label:"Espagnol"},{code:"ar",label:"Arabe"}];
 const dL = (d: string|null) => d ? Math.ceil((new Date(d).getTime()-Date.now())/86400000) : null;

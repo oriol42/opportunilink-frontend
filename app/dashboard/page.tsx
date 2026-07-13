@@ -114,6 +114,16 @@ function DashboardInner() {
   // Options de filtres dérivées des vraies données (on ne propose que ce qui existe).
   const fieldOptions = Array.from(new Set(allOpps.flatMap(o => o.required_fields ?? []))).filter(Boolean).sort();
   const levelOptions = Array.from(new Set(allOpps.flatMap(o => o.required_level ?? []))).filter(Boolean).sort();
+  const languageOptions = Array.from(new Set(allOpps.flatMap(o => o.required_languages ?? []))).filter(Boolean).sort();
+  const LANG_LABELS: Record<string, string> = {
+    fr: "Français", en: "Anglais", de: "Allemand", es: "Espagnol",
+    pt: "Portugais", ar: "Arabe", it: "Italien", zh: "Chinois",
+  };
+  const METHOD_LABELS: Record<string, string> = {
+    email: "Par email", formulaire_en_ligne: "Formulaire en ligne",
+    courrier: "Par courrier", plateforme: "Portail officiel",
+  };
+  const methodOptions = Array.from(new Set(allOpps.flatMap(o => o.application_method ? [o.application_method] : []))).sort();
 
   const displayOpps = tabType ? allOpps.filter(o => o.type === tabType) : allOpps;
 

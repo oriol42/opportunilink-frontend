@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import CVBuilder from "@/components/ai/CVBuilder";
+import ApplyButton from "@/components/opportunity/ApplyButton";
 import SaveButton from "@/components/opportunity/SaveButton";
 import ShareButton from "@/components/opportunity/ShareButton";
 import ReportButton from "@/components/opportunity/ReportButton";
@@ -15,6 +16,7 @@ import {
   GraduationCap, Link2, X, PartyPopper, ListChecks, Percent, Clock,
   SearchX, ExternalLink, Copy, Check, LucideIcon, Languages as LanguagesIcon,
   LoaderCircle, MessageSquareText, FolderOpen, ChevronRight, Sparkles, Compass,
+  Wallet,
 } from "lucide-react";
 import { typeConfig, daysLeft, reliabilityMeta } from "@/lib/opportunityHelpers";
 
@@ -24,6 +26,16 @@ interface Opp {
   required_level: string[]; required_fields: string[];
   required_languages: string[]; min_gpa: number | null;
   reliability_score: number; is_verified: boolean;
+  // Champs IA (extraction Groq) — deplies par le backend depuis required_docs
+  ai_extracted: boolean;
+  application_method: string | null;   // email / formulaire_en_ligne / courrier / plateforme
+  doc_labels: string[];                // deja traduits en francais par le backend
+  specific_documents: string[];
+  lang_tests: string[];
+  requires_recommendation: boolean;
+  requires_motivation_letter: boolean;
+  has_salary: boolean;
+  salary_text: string | null;
 }
 interface PrepCheck { label: string; ok: boolean; fix: string; category: string }
 interface PrepScore { score: number; missing: PrepCheck[]; message: string; ok_count: number; total_checks: number }
@@ -128,6 +140,69 @@ function detectMethod(sourceUrl: string, description: string): AppMethod {
   };
 }
 
+// ── Presets visuels pour la methode de candidature classifiee par l'IA ──
+// (memes 4 categories que application_method dans scoring.py cote backend)
+const METHOD_PRESETS: Record<string, Omit<AppMethod, "steps" | "email">> = {
+  formulaire_en_ligne: {
+    icon: FileText, label: "Formulaire en ligne",
+    color: "#7c3aed", bg: "rgba(124,58,237,.1)", border: "rgba(124,58,237,.25)", cta: "Ouvrir le formulaire",
+  },
+  email: {
+    icon: Mail, label: "Candidature par email",
+    color: "#0369a1", bg: "rgba(3,105,161,.1)", border: "rgba(3,105,161,.25)", cta: "Envoyer ma candidature",
+  },
+  courrier: {
+    icon: Mail, label: "Candidature par courrier",
+    color: "#b45309", bg: "rgba(180,83,9,.1)", border: "rgba(180,83,9,.25)", cta: "Voir les instructions",
+  },
+  plateforme: {
+    icon: GraduationCap, label: "Portail officiel",
+    color: "#059669", bg: "rgba(5,150,105,.1)", border: "rgba(5,150,105,.25)", cta: "Accéder au portail",
+  },
+};
+
+// ── Checklist dynamique — construite depuis les VRAIS documents extraits ──
+// par l'IA pour CETTE opportunite precise, au lieu d'une liste generique.
+function buildSteps(opp: Opp): string[] {
+  if (!opp.ai_extracted) {
+    // Extraction pas encore passee (opportunite tres recente, backfill nocturne
+    // pas encore execute) — on degrade proprement au lieu d'afficher du vide.
+    return [
+      "Lis bien la description ci-dessus pour les documents demandés (extraction IA en attente pour cette offre)",
+      "Prépare tous tes documents en PDF avant de commencer",
+      "Note la deadline dans ton calendrier et postule au moins 3 jours avant",
+    ];
+  }
+
+  const steps: string[] = [];
+  const docs = [...opp.doc_labels, ...opp.specific_documents];
+  if (docs.length) steps.push(`Documents à préparer : ${docs.join(", ")}`);
+  if (opp.requires_motivation_letter) steps.push("Une lettre de motivation personnalisée est demandée — Link IA peut te la générer");
+  if (opp.requires_recommendation) steps.push("Une lettre de recommandation est requise — demande-la tôt, ça prend du temps à obtenir");
+  if (opp.lang_tests.length) steps.push(`Test(s) de langue exigé(s) : ${opp.lang_tests.join(", ")}`);
+  steps.push("Soumets au moins 3 jours avant la deadline — les serveurs saturent souvent en fin de délai");
+  return steps;
+}
+
+// ── Resout la methode de candidature : priorite a la classification IA, ──
+// fallback sur l'heuristique regex si l'extraction n'est pas encore faite.
+function resolveMethod(opp: Opp): AppMethod {
+  if (opp.ai_extracted && opp.application_method && METHOD_PRESETS[opp.application_method]) {
+    const preset = METHOD_PRESETS[opp.application_method];
+    const emailMatch = opp.application_method === "email"
+      ? (opp.source_url + " " + opp.description).match(/([a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/)
+      : null;
+    return {
+      ...preset,
+      email: emailMatch?.[0],
+      cta: emailMatch ? `Écrire à ${emailMatch[0]}` : preset.cta,
+      steps: buildSteps(opp),
+    };
+  }
+  const fallback = detectMethod(opp.source_url, opp.description);
+  return { ...fallback, steps: buildSteps(opp) };
+}
+
 function DescriptionSection({ description }: { description: string }) {
   const { error: toastError } = useToast();
   const [lang, setLang] = useState<"orig" | "fr" | "en">("orig");
@@ -196,14 +271,7 @@ function DescriptionSection({ description }: { description: string }) {
 }
 
 function MethodCard({ opp }: { opp: Opp }) {
-  const m = detectMethod(opp.source_url, opp.description);
-  function handleCTA() {
-    if (m.email) {
-      window.open(`mailto:${m.email}?subject=Candidature — &body=Bonjour,%0A%0AJe me permets de vous adresser ma candidature pour l'opportunité "${opp.title}".%0A%0ACordialement,`,"_blank");
-    } else if (opp.source_url) {
-      window.open(opp.source_url,"_blank","noopener,noreferrer");
-    }
-  }
+  const m = resolveMethod(opp);
   return (
     <div style={{ background:"var(--bg-card)", border:`1.5px solid ${m.border}`, borderRadius:20, overflow:"hidden",
       boxShadow:"var(--shadow-sm)" }}>
@@ -236,13 +304,12 @@ function MethodCard({ opp }: { opp: Opp }) {
         ))}
       </div>
       <div style={{ padding:"14px 22px 20px" }}>
-        <button onClick={handleCTA} style={{ width:"100%", fontWeight:700, fontSize:14,
-          padding:"14px", borderRadius:14, border:"none", cursor:"pointer",
-          background:m.color, color:"#fff", boxShadow:`0 6px 20px ${m.color}44`,
-          display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-          transition:"transform .15s" }}>
-          <m.icon size={16} />{m.cta} →
-        </button>
+        {/* ApplyButton fait le vrai travail : cree la candidature en base (draft),
+            appelle /apply pour detecter la methode + verifier le coffre-fort,
+            marque submitted, puis redirige. Avant, ce bouton faisait juste un
+            window.open local sans jamais toucher l'API — la candidature n'etait
+            trackee nulle part. */}
+        <ApplyButton oppId={opp.id} oppTitle={opp.title} sourceUrl={opp.source_url} />
       </div>
     </div>
   );
@@ -477,7 +544,7 @@ function LetterSection({ oppId, title }: { oppId: string; title: string }) {
             </div>
             <div>
               <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:15, color:"var(--text-primary)" }}>Lettre de motivation IA</p>
-              <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:1 }}>Llama 3.3 70B · Personnalisée</p>
+              <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:1 }}>Link IA · Personnalisée</p>
             </div>
           </div>
           <Badge>IA</Badge>
@@ -592,6 +659,13 @@ export default function OpportunityDetailPage() {
                   <ShieldCheck size={12} /> Vérifié
                 </span>
               )}
+              {opp.has_salary && (
+                <span style={{ fontSize:11, fontWeight:700, color:"#15803d",
+                  background:"rgba(21,128,61,.1)", padding:"4px 12px", borderRadius:20,
+                  display:"flex", alignItems:"center", gap:4 }}>
+                  <Wallet size={12} /> Rémunéré
+                </span>
+              )}
               {d!==null && d>=0 && d<=14 && (
                 <span style={{ fontSize:11, fontWeight:700, color:"#fff",
                   background: d<=7 ? "#dc2626" : "#f59e0b",
@@ -638,6 +712,16 @@ export default function OpportunityDetailPage() {
               <p style={{ fontSize:12, color:"var(--text-muted)", marginBottom:16 }}>
                 {new Date(opp.deadline).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}
               </p>
+            )}
+
+            {opp.has_salary && (
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14,
+                padding:"10px 12px", background:"rgba(21,128,61,.08)", borderRadius:12 }}>
+                <Wallet size={18} color="#15803d" />
+                <span style={{ fontSize:13, fontWeight:700, color:"#15803d" }}>
+                  {opp.salary_text || "Rémunéré (montant non précisé)"}
+                </span>
+              </div>
             )}
 
             <div style={{ height:1, background:"var(--border-subtle)", margin:"14px 0" }} />

@@ -8,7 +8,7 @@ import {
   Check, X, ChevronLeft,
 } from "lucide-react";
 
-const LEVELS = ["Licence","Master","Doctorat","BTS","DUT","Ingénieur","Technicien Supérieur"];
+const LEVELS = ["Bac","Licence","Master","Doctorat","BTS","DUT","Ingénieur","Technicien Supérieur"];
 
 const FIELDS = [
   "Informatique","Génie Logiciel","Réseaux & Télécoms","Intelligence Artificielle",

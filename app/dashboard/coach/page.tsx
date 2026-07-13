@@ -138,7 +138,7 @@ function CoachInner() {
         <div style={{ flex:1, minWidth:0 }}>
           <p style={{ fontFamily:"var(--font-voice)", fontWeight:600, fontSize:16, color:"var(--text-primary)" }}>Link IA</p>
           <p style={{ fontSize:11, color:"#8b5cf6", display:"flex", alignItems:"center", gap:4, fontWeight:600 }}>
-            <span style={{ width:6, height:6, borderRadius:"50%", background:"#8b5cf6", display:"inline-block" }} /> En ligne · Llama 3.3 70B
+            <span style={{ width:6, height:6, borderRadius:"50%", background:"#8b5cf6", display:"inline-block" }} /> En ligne · Prêt à t'aider
           </p>
         </div>
         <button onClick={() => setShowHistory(true)} title="Historique des conversations"

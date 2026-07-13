@@ -10,7 +10,7 @@ import {
   Lightbulb, LoaderCircle, Award, Save, Plus, Lock, Eye, EyeOff, LucideIcon,
 } from "lucide-react";
 
-const LEVELS = ["Licence","Master","Doctorat","BTS","DUT","Ingénieur","Technicien Supérieur"];
+const LEVELS = ["Bac","Licence","Master","Doctorat","BTS","DUT","Ingénieur","Technicien Supérieur"];
 const FIELDS = [
   "Informatique","Génie Logiciel","Réseaux & Télécoms","Intelligence Artificielle",
   "Droit","Sciences Politiques","Relations Internationales",

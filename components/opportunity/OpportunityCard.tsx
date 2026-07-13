@@ -4,6 +4,7 @@ import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import SaveButton from "@/components/opportunity/SaveButton";
+import { Wallet } from "lucide-react";
 import {
   OpportunityLite, UserLite, typeConfig, daysLeft,
   detectApplyMethod, matchReasons, reliabilityMeta,
@@ -69,6 +70,7 @@ export default function OpportunityCard({ opp, user }: { opp: OpportunityLite; u
         <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
           <Badge variant={reliability.variant} icon={reliability.icon}>{reliability.label}</Badge>
           <Badge icon={reason.icon}>{reason.label}</Badge>
+          {opp.has_salary && <Badge variant="success" icon={Wallet}>Rémunéré</Badge>}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",

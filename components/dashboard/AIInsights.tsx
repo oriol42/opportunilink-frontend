@@ -42,7 +42,7 @@ function buildInsights(opps: OpportunityLite[], user: UserLite, stats?: StatsLit
     out.push({
       key: "urgent", icon: Flame, color: "#ef4444",
       title: `${closingSoon.length} match${closingSoon.length > 1 ? "s" : ""} ferme${closingSoon.length > 1 ? "nt" : ""} bientôt`,
-      detail: `« ${o.title} » — ${s}% de match, ${d === 0 ? "ferme aujourd'hui" : `plus que ${d} j`}.`,
+      detail: `« ${o.title} » — ${s}% de match, ${d === 0 ? "ferme aujourd'hui" : `encore ${d} jour${d > 1 ? "s" : ""}`}.`,
       href: `/opportunity/${o.id}`, cta: "Postuler maintenant",
     });
   }
@@ -70,7 +70,7 @@ function buildInsights(opps: OpportunityLite[], user: UserLite, stats?: StatsLit
     out.push({
       key: "profile", icon: User, color: "#fbbf24",
       title: `Profil complété à ${stats.profile_pct}%`,
-      detail: "Complète-le : des matchs plus précis se débloquent.",
+      detail: "Plus ton profil est complet, plus tes matchs seront précis.",
       href: "/dashboard/profile", cta: "Compléter mon profil",
     });
   }

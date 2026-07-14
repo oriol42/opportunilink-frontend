@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import { Globe, X, LoaderCircle, RefreshCw } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonRow } from "@/components/ui/Skeletons";
 import { typeConfig, daysLeft } from "@/lib/opportunityHelpers";
 
 interface SavedOpp {
@@ -50,7 +51,7 @@ function SavedInner() {
         </p>
       </div>
       <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
-        {isLoading && <div style={{ display:"flex", flexDirection:"column", gap:12 }}>{[1,2,3].map(i=><div key={i} style={{ background:"var(--bg-card)", borderRadius:16, border:"1px solid var(--border)", padding:20, height:100 }} className="animate-pulse" />)}</div>}
+        {isLoading && <div style={{ display:"flex", flexDirection:"column", gap:10 }}>{[1,2,3].map(i=><SkeletonRow key={i} />)}</div>}
         {isError && <div style={{ background:"var(--bg-danger)", border:"1px solid var(--border-danger)", borderRadius:16, padding:20, color:"var(--text-danger)", fontSize:14 }}>Erreur lors du chargement.</div>}
         {!isLoading && data?.length === 0 && (
           <EmptyState variant="saved" action={{ label: "Explorer le feed", href: "/dashboard" }} />

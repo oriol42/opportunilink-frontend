@@ -1,13 +1,14 @@
 import Link from "next/link";
+import Reveal from "@/components/ui/Reveal";
 import {
   Zap, PenLine, Archive, Target, Bookmark, ShieldCheck,
   Rocket, ArrowRight, Building2,
 } from "lucide-react";
 
 const STATS = [
-  { value: "500+", label: "Opportunités actives",  sub: "bourses, stages, emplois" },
-  { value: "24+",  label: "Sources automatisées",  sub: "crawlées 24h/24" },
-  { value: "100%", label: "Gratuit pour toujours", sub: "zéro frais cachés" },
+  { value: "670+", label: "Opportunités actives",  sub: "bourses, stages, emplois" },
+  { value: "26+",  label: "Sources automatisées",  sub: "crawlées 24h/24" },
+  { value: "100%", label: "Accès immédiat",         sub: "sans carte bancaire" },
 ];
 
 const FEATURES = [
@@ -56,7 +57,7 @@ export default function HomePage() {
         <div className="relative max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
           <div className="inline-flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-full mb-8">
             <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-            Plateforme gratuite · Yaoundé &amp; Douala · 24+ sources crawlées
+            Accès immédiat · Yaoundé &amp; Douala · 26+ sources crawlées
           </div>
           <h1 style={{ fontFamily: "var(--font-voice)" }} className="font-medium text-white text-5xl sm:text-7xl leading-tight mb-6">
             Ne rate plus jamais<br />
@@ -71,7 +72,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-16">
             <Link href="/register"
               className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-10 py-4 rounded-2xl transition shadow-lg shadow-emerald-500/20 text-base flex items-center justify-center gap-2">
-              Commencer gratuitement <ArrowRight size={18} />
+              Commencer sans carte bancaire <ArrowRight size={18} />
             </Link>
             <Link href="/login"
               className="border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-semibold px-10 py-4 rounded-2xl transition text-base">
@@ -96,12 +97,20 @@ export default function HomePage() {
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center mb-6">
           Opportunités crawlées depuis
         </p>
-        <div className="flex gap-4 overflow-x-auto pb-2 px-6 scrollbar-hide justify-center flex-wrap">
-          {SOURCES.map((s) => (
-            <span key={s} className="shrink-0 text-xs font-semibold text-gray-500 bg-gray-100 px-4 py-2 rounded-full">
-              {s}
-            </span>
-          ))}
+        <div
+          className="relative overflow-hidden"
+          style={{
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+            maskImage: "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+          }}
+        >
+          <div className="flex gap-4 w-max marquee-track">
+            {[...SOURCES, ...SOURCES].map((s, i) => (
+              <span key={s + i} className="shrink-0 text-xs font-semibold text-gray-500 bg-gray-100 px-4 py-2 rounded-full">
+                {s}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -112,15 +121,17 @@ export default function HomePage() {
             <h2 style={{ fontFamily: "var(--font-voice)" }} className="font-medium text-gray-900 text-4xl sm:text-5xl">Tout ce dont tu as besoin</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {FEATURES.map((f) => (
-              <div key={f.title}
-                className={`rounded-2xl border p-6 transition-all hover:-translate-y-0.5 hover:shadow-md ${f.accent}`}>
-                <div className={`w-11 h-11 ${f.iconBg} rounded-xl flex items-center justify-center mb-4`}>
-                  <f.icon size={20} color={f.iconColor} strokeWidth={2} />
+            {FEATURES.map((f, i) => (
+              <Reveal key={f.title} delay={i * 60}>
+                <div
+                  className={`rounded-2xl border p-6 transition-all hover:-translate-y-0.5 hover:shadow-md ${f.accent}`}>
+                  <div className={`w-11 h-11 ${f.iconBg} rounded-xl flex items-center justify-center mb-4`}>
+                    <f.icon size={20} color={f.iconColor} strokeWidth={2} />
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2 text-base">{f.title}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-base">{f.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -133,16 +144,18 @@ export default function HomePage() {
             <h2 style={{ fontFamily: "var(--font-voice)" }} className="font-medium text-gray-900 text-4xl">Simple comme bonjour</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {STEPS.map((step) => (
-              <div key={step.n} className="flex gap-4 items-start bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                <div style={{ fontFamily: "var(--font-voice)" }} className="w-10 h-10 rounded-full bg-emerald-500 text-white font-semibold text-sm flex items-center justify-center shrink-0">
-                  {step.n}
+            {STEPS.map((step, i) => (
+              <Reveal key={step.n} delay={i * 80}>
+                <div className="flex gap-4 items-start bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                  <div style={{ fontFamily: "var(--font-voice)" }} className="w-10 h-10 rounded-full bg-emerald-500 text-white font-semibold text-sm flex items-center justify-center shrink-0">
+                    {step.n}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-1">{step.title}</h3>
+                    <p className="text-sm text-gray-500">{step.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-1">{step.title}</h3>
-                  <p className="text-sm text-gray-500">{step.desc}</p>
-                </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -156,7 +169,7 @@ export default function HomePage() {
           <h2 style={{ fontFamily: "var(--font-voice)" }} className="font-medium text-white text-4xl sm:text-5xl mb-4">
             Ton avenir commence<br /><span className="text-emerald-400 italic">maintenant</span>
           </h2>
-          <p className="text-gray-400 mb-10 text-lg">Gratuit. Toujours.</p>
+          <p className="text-gray-400 mb-10 text-lg">Accès immédiat. Toujours.</p>
           <Link href="/register"
             className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 py-5 rounded-2xl transition shadow-lg shadow-emerald-500/20 text-lg">
             Créer mon compte <ArrowRight size={20} />
@@ -173,7 +186,7 @@ export default function HomePage() {
             </div>
             <div>
               <p className="font-bold text-white text-lg mb-1">Vous êtes une organisation ?</p>
-              <p className="text-gray-400 text-sm">Publiez vos opportunités directement dans le feed — gratuitement.</p>
+              <p className="text-gray-400 text-sm">Publiez vos opportunités directement dans le feed — sans frais.</p>
             </div>
           </div>
           <a href="/org"

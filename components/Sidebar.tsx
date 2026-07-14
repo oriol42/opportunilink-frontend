@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@/store/useStore";
 import { clearStaleLocalCaches } from "@/lib/auth";
 import { LayoutGrid, FileText, Bookmark, FolderOpen, MessageCircle, User, LogOut } from "lucide-react";
+import AnimatedNumber from "@/components/ui/AnimatedNumber";
 
 const NAV = [
   { href: "/dashboard",              icon: LayoutGrid,   label: "Dashboard"    },
@@ -82,7 +83,7 @@ export default function Sidebar() {
               fontFamily: "var(--font-voice)", fontSize: 12, fontWeight: 600,
               color: "var(--accent-dark)", flexShrink: 0,
             }}>
-              {user.opportuni_score}
+              <AnimatedNumber value={user.opportuni_score} />
             </span>
           )}
         </Link>

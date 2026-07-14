@@ -12,6 +12,7 @@ import {
   Send, Trash2, ExternalLink, MapPin, Calendar, LoaderCircle, Info,
 } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonAppCard } from "@/components/ui/Skeletons";
 
 interface Application {
   id: string; opportunity_id: string;
@@ -105,8 +106,8 @@ function ApplicationsInner() {
           <span><strong>Comment ça marche ?</strong> Crée une candidature quand tu veux postuler, puis marque-la <strong>"Soumise"</strong> une fois que tu as envoyé ton dossier.</span>
         </div>
         {isLoading && (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))", gap:12 }}>
-            {[1,2,3].map(i => <div key={i} style={{ background:"var(--bg-card)", borderRadius:16, height:140, border:"1px solid var(--border)" }} className="animate-pulse" />)}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))", gap:14 }}>
+            {[1,2,3].map(i => <SkeletonAppCard key={i} />)}
           </div>
         )}
         {!isLoading && apps?.length === 0 && (

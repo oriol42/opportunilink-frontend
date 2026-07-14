@@ -1,4 +1,7 @@
 // components/ui/ScoreRing.tsx
+"use client";
+import { useAnimatedValue } from "@/lib/useAnimatedValue";
+
 interface ScoreRingProps {
   score: number;
   size?: number;
@@ -14,7 +17,9 @@ function colorForScore(score: number): string {
 
 export default function ScoreRing({ score, size = 48, strokeWidth = 3.5, showLabel = true }: ScoreRingProps) {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
-  const color = colorForScore(clamped);
+  const { display, increased } = useAnimatedValue(clamped);
+  const shown = Math.round(display);
+  const color = colorForScore(shown);
   const inner = size - strokeWidth * 2;
 
   return (
@@ -24,14 +29,17 @@ export default function ScoreRing({ score, size = 48, strokeWidth = 3.5, showLab
         height: size,
         borderRadius: "50%",
         flexShrink: 0,
-        background: `conic-gradient(${color} ${clamped}%, var(--bg-surface-2) 0)`,
+        background: `conic-gradient(${color} ${display}%, var(--bg-surface-2) 0)`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.08))",
+        filter: increased
+          ? "drop-shadow(0 0 6px rgba(16,185,129,0.55)) drop-shadow(0 1px 2px rgba(0,0,0,0.08))"
+          : "drop-shadow(0 1px 2px rgba(0,0,0,0.08))",
+        transition: "filter .4s ease",
       }}
       role="img"
-      aria-label={`Score : ${clamped} sur 100`}
+      aria-label={`Score : ${shown} sur 100`}
     >
       <div
         style={{
@@ -46,7 +54,7 @@ export default function ScoreRing({ score, size = 48, strokeWidth = 3.5, showLab
       >
         {showLabel && (
           <span style={{ fontSize: size * 0.27, fontWeight: 500, color: "var(--text-primary)" }}>
-            {clamped}%
+            {shown}%
           </span>
         )}
       </div>
